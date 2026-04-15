@@ -801,25 +801,42 @@
                 font-size: 36px;
             }
 
-            /* 角色传阅 大卡片 */
-            #role-card-display {
-                min-height: 55vh !important;
+            /* 角色传阅页 — iPad 版 */
+            .content.reveal-content {
+                padding: 28px 40px 16px;
+            }
+            .reveal-name-label {
+                font-size: 32px;
+                margin-bottom: 24px;
+            }
+            .reveal-card-row {
+                gap: 20px;
+                max-width: 760px;   /* 不让卡片在 1024px 屏幕上横得离谱 */
+                margin: 0 auto;
+            }
+            .reveal-progress {
+                font-size: 16px;
+                margin-top: 14px;
             }
             #role-flip-card {
-                padding: 36px !important;
-                border-radius: 24px !important;
+                padding: 40px !important;
+                border-radius: 28px !important;
+                border-width: 3px !important;
             }
-            #role-card-display [style*="font-size:110px"] { font-size: 160px !important; }
-            #role-card-display [style*="font-size:150px"] { font-size: 200px !important; }
-            #role-card-display [style*="font-size:28px"]  { font-size: 36px !important; }
+            /* 放大翻牌后的内容（针对 JS 拼出的 inline style） */
+            #role-card-display [style*="font-size:110px"] { font-size: 180px !important; }
+            #role-card-display [style*="font-size:150px"] { font-size: 220px !important; }
+            #role-card-display [style*="font-size:28px"]  { font-size: 38px !important; }
             #role-card-display [style*="font-size:20px"]  { font-size: 26px !important; }
+            #role-card-display [style*="font-size:13px"]  { font-size: 17px !important; }
+            #role-card-display [style*="font-size:11px"]  { font-size: 14px !important; }
 
-            /* 左右翻页按钮 */
+            /* 左右翻页按钮：宽一点，字号大一点，高度由 stretch 决定 */
             .side-nav-btn {
-                width: 64px;
-                min-height: 60vh;
-                font-size: 44px;
-                border-radius: 18px;
+                flex-basis: 72px;
+                font-size: 48px;
+                border-radius: 20px;
+                border-width: 3px;
             }
         }
 
@@ -899,13 +916,48 @@
             }
         }
 
-        /* 角色传阅页：左右两侧的翻页按钮 */
+        /* ===== 角色传阅页 ===== */
+        .content.reveal-content {
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px 8px;
+            overflow: hidden;   /* 主区不自己滚，让卡片自适应高度 */
+        }
+        .reveal-name-label {
+            flex-shrink: 0;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 16px;
+        }
+        .reveal-card-row {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            align-items: stretch;   /* 关键：按钮和卡片等高 */
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .reveal-card-slot {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+        }
+        .reveal-progress {
+            flex-shrink: 0;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 10px;
+        }
+        /* 左右翻页按钮：用 stretch 与卡片同高，不再硬编码 vh */
         .side-nav-btn {
-            flex: 0 0 auto;
-            width: 44px;
-            min-height: 50vh;
+            flex: 0 0 44px;
+            align-self: stretch;
             border: 2px solid var(--border-color);
-            border-radius: 14px;
+            border-radius: 16px;
             background: rgba(30, 30, 70, 0.35);
             color: var(--text-primary);
             font-size: 32px;
@@ -1001,18 +1053,19 @@
         <div class="header-title">角色分配</div>
         <button class="header-back" onclick="gameState.goHome()">X</button>
     </div>
-    <div class="content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div id="reveal-container" style="text-align: center; width: 100%;">
-            <div style="font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent-blue);">
-                <span id="current-player-name"></span> 的角色
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; width:100%;">
-                <button id="reveal-prev-btn" class="side-nav-btn" aria-label="上一个">‹</button>
-                <div id="role-card-display" style="flex:1; min-width:0; margin: 12px 0;"></div>
-                <button id="reveal-next-btn" class="side-nav-btn" aria-label="下一个">›</button>
-            </div>
-            <div id="reveal-nav" style="margin-top: 20px;"></div>
+    <div class="content reveal-content">
+        <div class="reveal-name-label">
+            <span id="current-player-name"></span> 的角色
         </div>
+        <div class="reveal-card-row">
+            <button id="reveal-prev-btn" class="side-nav-btn" aria-label="上一个">‹</button>
+            <div id="role-card-display" class="reveal-card-slot"></div>
+            <button id="reveal-next-btn" class="side-nav-btn" aria-label="下一个">›</button>
+        </div>
+        <div class="reveal-progress" id="reveal-progress"></div>
+    </div>
+    <div class="bottom-bar">
+        <div id="reveal-nav"></div>
     </div>
 </div>
 
@@ -1502,7 +1555,7 @@ const setupScreen = {
             const hasPrivilege = (player.privilegeCards || []).length > 0;
             container.innerHTML = `
                 <div style="
-                    width: 100%; min-height: 50vh;
+                    width: 100%; height: 100%;
                     border-radius: 20px;
                     display: flex; flex-direction: column;
                     align-items: center; justify-content: center;
@@ -1550,6 +1603,12 @@ const setupScreen = {
                     `;
                 }
             };
+
+            // 进度指示
+            const progressEl = document.getElementById('reveal-progress');
+            if (progressEl) {
+                progressEl.textContent = `${currentIndex + 1} / ${gameState.players.length}`;
+            }
 
             // 左右两侧的翻页按钮
             const prevSideBtn = document.getElementById('reveal-prev-btn');
