@@ -773,6 +773,34 @@
                 padding: 20px;
             }
         }
+
+        /* 角色传阅页：左右两侧的翻页按钮 */
+        .side-nav-btn {
+            flex: 0 0 auto;
+            width: 44px;
+            min-height: 50vh;
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            background: rgba(30, 30, 70, 0.35);
+            color: var(--text-primary);
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            touch-action: manipulation;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .side-nav-btn:active {
+            background: rgba(60, 60, 120, 0.5);
+            transform: scale(0.96);
+        }
+        .side-nav-btn:disabled,
+        .side-nav-btn[hidden] {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -849,11 +877,15 @@
         <button class="header-back" onclick="gameState.goHome()">X</button>
     </div>
     <div class="content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div id="reveal-container" style="text-align: center;">
+        <div id="reveal-container" style="text-align: center; width: 100%;">
             <div style="font-size: 24px; font-weight: 700; margin-bottom: 16px; color: var(--accent-blue);">
                 <span id="current-player-name"></span> 的角色
             </div>
-            <div id="role-card-display" style="width: 100%; margin: 12px 0;"></div>
+            <div style="display:flex; align-items:center; gap:6px; width:100%;">
+                <button id="reveal-prev-btn" class="side-nav-btn" aria-label="上一个">‹</button>
+                <div id="role-card-display" style="flex:1; min-width:0; margin: 12px 0;"></div>
+                <button id="reveal-next-btn" class="side-nav-btn" aria-label="下一个">›</button>
+            </div>
             <div id="reveal-nav" style="margin-top: 20px;"></div>
         </div>
     </div>
@@ -1394,31 +1426,34 @@ const setupScreen = {
                 }
             };
 
-            // 导航
-            const nav = document.getElementById('reveal-nav');
-            nav.innerHTML = '';
-
+            // 左右两侧的翻页按钮
+            const prevSideBtn = document.getElementById('reveal-prev-btn');
+            const nextSideBtn = document.getElementById('reveal-next-btn');
             if (currentIndex > 0) {
-                const prevBtn = document.createElement('button');
-                prevBtn.className = 'btn btn-secondary';
-                prevBtn.textContent = '← 上一个';
-                prevBtn.onclick = () => {
+                prevSideBtn.hidden = false;
+                prevSideBtn.onclick = () => {
                     currentIndex--;
                     updateDisplay();
                 };
-                nav.appendChild(prevBtn);
+            } else {
+                prevSideBtn.hidden = true;
+                prevSideBtn.onclick = null;
             }
-
             if (currentIndex < gameState.players.length - 1) {
-                const nextBtn = document.createElement('button');
-                nextBtn.className = 'btn btn-primary';
-                nextBtn.textContent = '下一个 →';
-                nextBtn.onclick = () => {
+                nextSideBtn.hidden = false;
+                nextSideBtn.onclick = () => {
                     currentIndex++;
                     updateDisplay();
                 };
-                nav.appendChild(nextBtn);
             } else {
+                nextSideBtn.hidden = true;
+                nextSideBtn.onclick = null;
+            }
+
+            // 底部仅在最后一人显示"开始游戏"
+            const nav = document.getElementById('reveal-nav');
+            nav.innerHTML = '';
+            if (currentIndex === gameState.players.length - 1) {
                 const startBtn = document.createElement('button');
                 startBtn.className = 'btn btn-primary btn-lg';
                 startBtn.style.width = '100%';
@@ -1522,8 +1557,7 @@ const gameScreen = {
             gameState.pendingPenalties = [];
         }
 
-        const wolves = gameState.alivePlayers.filter(p => p.role.includes('狼人')).length;
-        const humans = gameState.alivePlayers.filter(p => !p.role.includes('狼人')).length;
+        // 不再统计并显示存活的狼人/村民人数，避免泄露昨晚阵营信息
 
         const killedHtml = killedPlayer
             ? `<div class="dawn-card killed">
@@ -1543,8 +1577,6 @@ const gameScreen = {
                 ${killedHtml}
                 <div class="stat-row">
                     <div class="stat-chip">存活 <strong>${gameState.alivePlayers.length}</strong> 人</div>
-                    <div class="stat-chip">${getRoleIcon('wolf')} <strong style="color:var(--accent-red)">${wolves}</strong></div>
-                    <div class="stat-chip">${getRoleIcon('villager')} <strong style="color:var(--accent-blue)">${humans}</strong></div>
                 </div>
                 <div style="font-size:14px;color:var(--text-dim);">请开始发言，找出狼人</div>
             </div>
