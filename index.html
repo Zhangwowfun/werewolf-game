@@ -698,6 +698,131 @@
             text-align: left;
         }
 
+        /* iPad 通用适配（竖屏 + 非 12.9 横屏）
+           命中：iPad mini / Air / Pro 11 / Pro 12.9 竖屏 & 所有 iPad 竖屏
+           不命中：手机（<768），也不抢 1024+ landscape 那条更精细的规则 */
+        @media (min-width: 768px) and (max-width: 1279px),
+               (min-width: 1024px) and (orientation: portrait) {
+
+            /* 字号放大 */
+            .home-logo { font-size: 110px; }
+            .home-title { font-size: 56px; }
+            .home-subtitle { font-size: 22px; margin-bottom: 56px; }
+            .header-title { font-size: 28px; }
+            .setup-label { font-size: 18px; }
+
+            /* 按钮 */
+            .btn {
+                font-size: 20px;
+                padding: 20px 36px;
+                min-height: 64px;
+                border-radius: 20px;
+            }
+            .btn-lg {
+                font-size: 24px;
+                padding: 22px 40px;
+                border-radius: 22px;
+            }
+            .header-back {
+                width: 52px; height: 52px;
+                font-size: 24px;
+                border-radius: 14px;
+            }
+
+            /* 布局 padding */
+            .header { padding: 28px 36px 14px; }
+            .content { padding: 14px 36px 32px; }
+            .bottom-bar { padding: 22px 36px; padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+            .setup-section { margin-bottom: 32px; }
+
+            /* 人数选择 */
+            .player-count-btn {
+                padding: 28px 12px;
+                font-size: 32px;
+                min-height: 84px;
+                border-radius: 20px;
+            }
+            .player-count-btn span { font-size: 14px; }
+            .player-count-grid { gap: 14px; }
+
+            /* 姓名输入 */
+            .name-input {
+                font-size: 19px;
+                padding: 18px 20px;
+                border-radius: 14px;
+            }
+            .name-input-list { gap: 12px; }
+
+            /* 角色列表 */
+            .role-item {
+                padding: 18px 20px;
+                min-height: 72px;
+                border-radius: 14px;
+                gap: 16px;
+            }
+            .role-icon {
+                width: 64px; height: 64px;
+                font-size: 36px;
+                border-radius: 16px;
+            }
+            .role-name { font-size: 19px; }
+            .role-desc { font-size: 15px; }
+
+            /* 特权卡网格 */
+            .card-grid { gap: 14px; }
+            .card-option {
+                padding: 20px;
+                min-height: 140px;
+                border-radius: 20px;
+            }
+            .card-emoji { font-size: 44px; margin-bottom: 8px; }
+            .card-name { font-size: 18px; }
+            .card-desc { font-size: 14px; }
+
+            /* 通用 card */
+            .card { padding: 20px; border-radius: 20px; }
+
+            /* 特权卡展示 */
+            .showcase-card {
+                min-height: 240px;
+                padding: 24px;
+                border-radius: 22px;
+            }
+            .card-showcase-title { font-size: 32px; }
+
+            /* 玩家/投票卡 */
+            .player-card,
+            .vote-candidate {
+                min-height: 72px;
+                border-radius: 18px;
+            }
+            .player-avatar {
+                width: 64px; height: 64px;
+                font-size: 36px;
+            }
+
+            /* 角色传阅 大卡片 */
+            #role-card-display {
+                min-height: 55vh !important;
+            }
+            #role-flip-card {
+                padding: 36px !important;
+                border-radius: 24px !important;
+            }
+            #role-card-display [style*="font-size:110px"] { font-size: 160px !important; }
+            #role-card-display [style*="font-size:150px"] { font-size: 200px !important; }
+            #role-card-display [style*="font-size:28px"]  { font-size: 36px !important; }
+            #role-card-display [style*="font-size:20px"]  { font-size: 26px !important; }
+
+            /* 左右翻页按钮 */
+            .side-nav-btn {
+                width: 64px;
+                min-height: 60vh;
+                font-size: 44px;
+                border-radius: 18px;
+            }
+        }
+
         /* iPad Pro 12.9 横屏优化 */
         @media (min-width: 1024px) and (orientation: landscape) {
             .screen {
