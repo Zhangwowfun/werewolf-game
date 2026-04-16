@@ -291,6 +291,142 @@
             display: flex; flex-direction: column; gap: 10px;
         }
 
+        .voice-setting-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .voice-setting-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .voice-setting-value {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .voice-range {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .voice-select {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 15px;
+            outline: none;
+        }
+
+        .diagnostic-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .diagnostic-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .diagnostic-card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .diagnostic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .diagnostic-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px;
+            padding: 12px;
+        }
+
+        .diagnostic-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            margin-bottom: 6px;
+        }
+
+        .diagnostic-value {
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .diagnostic-note {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .diagnostic-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .voice-fab {
+            position: fixed;
+            right: 18px;
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            width: 58px;
+            height: 58px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(18,18,42,0.92);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.34);
+            backdrop-filter: blur(10px);
+            z-index: 90;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .voice-fab.active {
+            border-color: rgba(127,255,110,0.55);
+            box-shadow: 0 12px 30px rgba(127,255,110,0.18);
+        }
+
+        .voice-fab.muted {
+            color: var(--text-secondary);
+        }
+
+        .voice-fab.unsupported {
+            color: var(--text-dim);
+            border-color: rgba(255,71,87,0.2);
+        }
+
+        .voice-fab:active {
+            transform: scale(0.94);
+        }
+
         .game-grid {
             display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
             padding: 10px 0;
@@ -790,6 +926,33 @@
             }
             .card-showcase-title { font-size: 32px; }
 
+            .diagnostic-card {
+                border-radius: 22px;
+                padding: 20px;
+            }
+
+            .diagnostic-card h3 {
+                font-size: 20px;
+            }
+
+            .diagnostic-label {
+                font-size: 12px;
+            }
+
+            .diagnostic-value,
+            .diagnostic-note {
+                font-size: 16px;
+            }
+
+            .voice-fab {
+                width: 68px;
+                height: 68px;
+                font-size: 32px;
+                right: 24px;
+                bottom: calc(24px + env(safe-area-inset-bottom));
+                border-radius: 20px;
+            }
+
             /* 玩家/投票卡 */
             .player-card,
             .vote-candidate {
@@ -869,6 +1032,11 @@
 
             .home-buttons {
                 max-width: 460px;
+            }
+
+            .voice-fab {
+                right: calc(50% - 540px + 24px);
+                bottom: 30px;
             }
 
             .card-grid {
@@ -996,6 +1164,9 @@
             <button class="btn btn-secondary btn-lg btn-block" onclick="showRulesModal()">
                 📖 游戏规则
             </button>
+            <button id="voice-host-entry-btn" class="btn btn-ghost btn-block" onclick="voiceDirector.showSettingsModal()">
+                🎙️ 语音主持：关闭
+            </button>
         </div>
     </div>
 </div>
@@ -1072,7 +1243,7 @@
 <!-- 游戏主界面 -->
 <div id="screen-game" class="screen">
     <div class="header">
-        <div style="width:40px"></div>
+        <button class="header-back" onclick="voiceDirector.showSettingsModal()">🎙️</button>
         <div class="header-title" id="game-phase-text">游戏进行中</div>
         <button class="header-back" onclick="gameState.goHome()">X</button>
     </div>
@@ -1089,10 +1260,32 @@
     </div>
 </div>
 
+<!-- 语音自检 -->
+<div id="screen-voice-diagnostic" class="screen">
+    <div class="header">
+        <button class="header-back" onclick="voiceDirector.closeDiagnosticScreen()">←</button>
+        <div class="header-title">语音自检</div>
+        <button class="header-back" onclick="voiceDirector.showSettingsModal()">🎙️</button>
+    </div>
+    <div class="content">
+        <div id="voice-diagnostic-content" class="diagnostic-stack"></div>
+    </div>
+    <div class="bottom-bar" id="voice-diagnostic-bottom-bar"></div>
+</div>
+
 <!-- 模态框 -->
 <div id="modal-overlay" class="modal-overlay">
     <div class="modal" id="modal-content"></div>
 </div>
+
+<button id="voice-fab"
+        class="voice-fab muted voice-gesture-control"
+        type="button"
+        aria-label="开启语音主持"
+        ontouchend="return voiceDirector.handleToggleTouch(event)"
+        onclick="return voiceDirector.handleToggleClick(event)">
+    🔇
+</button>
 
 <script>
 // =====================================================
@@ -1224,6 +1417,7 @@ const gameState = {
     activeHolderId: null,         // 当前正在发动特权卡的玩家ID
 
     goHome() {
+        voiceDirector.stop();
         this.playerCount = 0;
         this.players = [];
         this.roles = [];
@@ -1263,6 +1457,640 @@ const modalUI = {
 
     hide() {
         document.getElementById('modal-overlay').classList.remove('active');
+    }
+};
+
+// =====================================================
+// 语音主持
+// =====================================================
+
+const VOICE_HOST_STORAGE_KEY = 'wolf-kill-voice-host-v1';
+
+const HOST_SCRIPT = {
+    showcase({ holders }) {
+        if (!holders?.length) return ['本局没有特权卡。', '请继续进入角色分配。'];
+        if (holders.length === 1) {
+            return [
+                '本局特权卡已经公开。',
+                `${holders[0].name} 持有一张特权卡。`,
+                '请确认所有玩家都已看到，然后继续分配角色。'
+            ];
+        }
+        return [
+            '本局特权卡已经公开。',
+            `${holders.map(h => h.name).join('和')} 分别持有一张特权卡。`,
+            '请确认所有玩家都已看到，然后继续分配角色。'
+        ];
+    },
+    roleReveal({ player, index, total }) {
+        return [
+            `请把设备交给 ${player.name}。`,
+            '点击卡片查看你的身份。',
+            index === total - 1 ? '全部玩家查看完成后，可以开始游戏。' : '查看完毕后，请交给下一位玩家。'
+        ];
+    },
+    nightStart({ round }) {
+        return [
+            `第 ${round} 轮夜晚开始。`,
+            '狼人请私下讨论并决定击杀目标。',
+            '预言家查验一名玩家，医生选择是否守护。',
+            '完成后点击夜晚结束。'
+        ];
+    },
+    dawn({ killedPlayer, aliveCount }) {
+        if (killedPlayer) {
+            return [
+                '天亮了。',
+                `${killedPlayer.name} 在昨晚出局。`,
+                `当前还有 ${aliveCount} 名玩家存活。`,
+                '请开始白天讨论。'
+            ];
+        }
+        return [
+            '天亮了。',
+            '昨晚是平安夜，无人出局。',
+            `当前还有 ${aliveCount} 名玩家存活。`,
+            '请开始白天讨论。'
+        ];
+    },
+    discussionStart({ minutes }) {
+        return [
+            '白天讨论开始。',
+            `本轮讨论时间 ${minutes} 分钟。`,
+            '请所有玩家自由发言。'
+        ];
+    },
+    discussionWarning({ seconds }) {
+        return [`讨论时间还剩 ${seconds} 秒。`];
+    },
+    voteHandoff({ voter, current, total, judge, defendant }) {
+        return judge
+            ? [
+                `请把设备交给 ${voter.name}。`,
+                `请判定 ${defendant.name} 是否是狼人。`,
+                `当前是第 ${current} 位，共 ${total} 位。`
+            ]
+            : [
+                `请把设备交给 ${voter.name}。`,
+                '请准备投票。',
+                `当前是第 ${current} 位，共 ${total} 位。`
+            ];
+    },
+    voteBallot({ voter, judge, defendant }) {
+        return judge
+            ? [`${voter.name}，请选择你对 ${defendant.name} 的判决。`]
+            : [`${voter.name}，请选择你怀疑的玩家。`];
+    },
+    voteTally({ eliminated, tiedPlayers, canJudge }) {
+        return [
+            tiedPlayers?.length > 1 ? '本轮出现平票，系统已随机决定结果。' : '本轮投票结束。',
+            `${eliminated.name} 当前票数最高。`,
+            canJudge ? '如果持有审判者卡，现在可以发起末日审判。' : '请执行出局结果。'
+        ];
+    },
+    publicCard({ holderName, cardName, leadText }) {
+        return [
+            leadText || `${holderName} 正在发动特权卡。`,
+            `特权卡 ${cardName} 已公开。`,
+            '请全员确认后继续。'
+        ];
+    },
+    judgeDefense({ holderName }) {
+        return [
+            '末日审判开始。',
+            `${holderName} 进入辩护阶段。`,
+            '辩护时间两分钟。'
+        ];
+    },
+    judgeQuestion({ holderName }) {
+        return [
+            '进入质询阶段。',
+            `${holderName} 需要回答其他玩家的问题。`,
+            '质询时间三十秒。'
+        ];
+    },
+    judgeResult({ succeeded, defendantName }) {
+        return succeeded
+            ? ['审判成立。', `${defendantName} 被判定为狼人，立即出局。`]
+            : ['审判失败。', `${defendantName} 暂时存活，并获得额外奖励。`];
+    },
+    gameEnd({ winner }) {
+        return winner === 'HUMAN'
+            ? ['游戏结束。', '村民阵营胜利。', '现在可以执行败者惩罚，或者直接查看结果。']
+            : ['游戏结束。', '狼人阵营胜利。', '现在可以执行败者惩罚，或者直接查看结果。'];
+    }
+};
+
+const voiceDirector = {
+    supported: 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window,
+    enabled: false,
+    voices: [],
+    selectedVoiceURI: '',
+    rate: 0.95,
+    volume: 1,
+    pitch: 1,
+    queueToken: 0,
+    voiceListenerBound: false,
+    diagnosticReturnScreenId: 'screen-home',
+    lastSpeechEvent: '未触发',
+    lastSpeechError: '无',
+    lastSpeechUpdatedAt: '未记录',
+    lastSpeechText: '未测试',
+
+    init() {
+        this.loadSettings();
+        this.bindVoiceEvents();
+        this.loadVoices();
+        this.refreshControls();
+    },
+
+    bindVoiceEvents() {
+        if (!this.supported || this.voiceListenerBound) return;
+        const handler = () => {
+            this.loadVoices();
+            this.refreshSettingsModal();
+            this.refreshDiagnosticScreen();
+        };
+        if (typeof window.speechSynthesis.addEventListener === 'function') {
+            window.speechSynthesis.addEventListener('voiceschanged', handler);
+        } else {
+            window.speechSynthesis.onvoiceschanged = handler;
+        }
+        this.voiceListenerBound = true;
+    },
+
+    loadSettings() {
+        try {
+            const raw = localStorage.getItem(VOICE_HOST_STORAGE_KEY);
+            if (!raw) return;
+            const saved = JSON.parse(raw);
+            this.enabled = !!saved.enabled;
+            this.selectedVoiceURI = saved.selectedVoiceURI || '';
+            this.rate = Number(saved.rate) || this.rate;
+            this.volume = Number(saved.volume) || this.volume;
+            this.pitch = Number(saved.pitch) || this.pitch;
+        } catch (err) {
+            console.warn('voice settings load failed', err);
+        }
+    },
+
+    saveSettings() {
+        try {
+            localStorage.setItem(VOICE_HOST_STORAGE_KEY, JSON.stringify({
+                enabled: this.enabled,
+                selectedVoiceURI: this.selectedVoiceURI,
+                rate: this.rate,
+                volume: this.volume,
+                pitch: this.pitch
+            }));
+        } catch (err) {
+            console.warn('voice settings save failed', err);
+        }
+    },
+
+    loadVoices() {
+        if (!this.supported) return [];
+        const voices = window.speechSynthesis.getVoices() || [];
+        this.voices = voices;
+        if (!this.selectedVoiceURI) {
+            const preferred = this.pickPreferredVoice();
+            if (preferred) this.selectedVoiceURI = preferred.voiceURI;
+        } else if (!voices.some(v => v.voiceURI === this.selectedVoiceURI)) {
+            const preferred = this.pickPreferredVoice();
+            this.selectedVoiceURI = preferred?.voiceURI || '';
+        }
+        this.saveSettings();
+        return voices;
+    },
+
+    pickPreferredVoice() {
+        if (!this.voices.length) return null;
+        const zhVoices = this.voices.filter(v => (v.lang || '').toLowerCase().startsWith('zh'));
+        if (!zhVoices.length) return this.voices[0];
+        const named = zhVoices.find(v => /xiaoyi|xiaoxiao|tingting|mei-jia|sin-ji|ting-ting|yunxi/i.test(v.name));
+        return named || zhVoices[0];
+    },
+
+    getVoice() {
+        return this.voices.find(v => v.voiceURI === this.selectedVoiceURI) || this.pickPreferredVoice();
+    },
+
+    getVoiceLabel() {
+        const voice = this.getVoice();
+        return voice ? `${voice.name || '未命名语音'} · ${voice.lang || 'unknown'}` : '未选中';
+    },
+
+    getSynthFlags() {
+        if (!this.supported) return 'not supported';
+        const synth = window.speechSynthesis;
+        return `speaking:${synth.speaking ? 'yes' : 'no'} / pending:${synth.pending ? 'yes' : 'no'} / paused:${synth.paused ? 'yes' : 'no'}`;
+    },
+
+    nowLabel() {
+        return new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    },
+
+    recordSpeechEvent(name, detail = '') {
+        this.lastSpeechEvent = name;
+        this.lastSpeechUpdatedAt = this.nowLabel();
+        this.lastSpeechError = detail || '无';
+        this.refreshDiagnosticScreen();
+    },
+
+    stop() {
+        this.queueToken++;
+        if (this.supported) window.speechSynthesis.cancel();
+    },
+
+    speakLines(lines, options = {}) {
+        if (!this.supported) return;
+        if (!this.enabled && !options.force) return;
+        const queue = (lines || []).map(line => `${line}`.trim()).filter(Boolean);
+        if (!queue.length) return;
+
+        const token = ++this.queueToken;
+        if (options.replace !== false) window.speechSynthesis.cancel();
+        if (typeof window.speechSynthesis.resume === 'function') window.speechSynthesis.resume();
+
+        const speakNext = index => {
+            if (token !== this.queueToken || index >= queue.length) return;
+            const utterance = new SpeechSynthesisUtterance(queue[index]);
+            const voice = this.getVoice();
+            if (voice) {
+                utterance.voice = voice;
+                utterance.lang = voice.lang || 'zh-CN';
+            } else {
+                utterance.lang = 'zh-CN';
+            }
+            utterance.rate = this.rate;
+            utterance.volume = this.volume;
+            utterance.pitch = this.pitch;
+            utterance.onstart = () => this.recordSpeechEvent('host:onstart');
+            utterance.onend = () => {
+                this.recordSpeechEvent('host:onend');
+                speakNext(index + 1);
+            };
+            utterance.onerror = err => {
+                this.recordSpeechEvent('host:onerror', err?.error || 'unknown');
+                speakNext(index + 1);
+            };
+            window.speechSynthesis.speak(utterance);
+        };
+
+        speakNext(0);
+    },
+
+    announce(scene, data = {}, options = {}) {
+        const builder = HOST_SCRIPT[scene];
+        if (!builder) return;
+        this.speakLines(builder(data), options);
+    },
+
+    enableFromGesture() {
+        if (!this.supported) return;
+        this.enabled = true;
+        this.loadVoices();
+        this.saveSettings();
+        this.refreshControls();
+        this.refreshSettingsModal();
+        this.speakLines(['语音主持已开启。', '接下来我会为你播报游戏流程。'], { force: true });
+    },
+
+    disable() {
+        this.enabled = false;
+        this.stop();
+        this.saveSettings();
+        this.refreshControls();
+        this.refreshSettingsModal();
+    },
+
+    toggleFromGesture() {
+        if (!this.supported) {
+            modalUI.show(`
+                <div class="modal-title">语音不可用</div>
+                <div class="modal-text">当前浏览器不支持网页语音主持。</div>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary btn-block" onclick="modalUI.hide()">知道了</button>
+                </div>
+            `);
+            return;
+        }
+        if (this.enabled) {
+            this.disable();
+        } else {
+            this.enableFromGesture();
+        }
+    },
+
+    runTrustedAction(event, action) {
+        if (event) {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+        action();
+        return false;
+    },
+
+    handleToggleTouch(event) {
+        return this.runTrustedAction(event, () => this.toggleFromGesture());
+    },
+
+    handleToggleClick(event) {
+        if (event && !event.isTrusted) return false;
+        return this.runTrustedAction(event, () => this.toggleFromGesture());
+    },
+
+    handleEnableTouch(event) {
+        return this.runTrustedAction(event, () => this.enableFromGesture());
+    },
+
+    handleEnableClick(event) {
+        if (event && !event.isTrusted) return false;
+        return this.runTrustedAction(event, () => this.enableFromGesture());
+    },
+
+    handlePreviewTouch(event) {
+        return this.runTrustedAction(event, () => this.preview());
+    },
+
+    handlePreviewClick(event) {
+        if (event && !event.isTrusted) return false;
+        return this.runTrustedAction(event, () => this.preview());
+    },
+
+    handleDiagnosticTouch(event) {
+        return this.runTrustedAction(event, () => this.runDiagnosticTest());
+    },
+
+    handleDiagnosticClick(event) {
+        if (event && !event.isTrusted) return false;
+        return this.runTrustedAction(event, () => this.runDiagnosticTest());
+    },
+
+    updateVoice(voiceURI) {
+        this.selectedVoiceURI = voiceURI;
+        this.saveSettings();
+        this.refreshDiagnosticScreen();
+    },
+
+    updateRate(value) {
+        this.rate = Number(value);
+        const rateLabel = document.getElementById('voice-rate-value');
+        if (rateLabel) rateLabel.textContent = this.rate.toFixed(2);
+        this.saveSettings();
+        this.refreshDiagnosticScreen();
+    },
+
+    updateVolume(value) {
+        this.volume = Number(value);
+        const volumeLabel = document.getElementById('voice-volume-value');
+        if (volumeLabel) volumeLabel.textContent = `${Math.round(this.volume * 100)}%`;
+        this.saveSettings();
+        this.refreshDiagnosticScreen();
+    },
+
+    preview() {
+        if (!this.supported) return;
+        if (typeof window.speechSynthesis.resume === 'function') window.speechSynthesis.resume();
+        this.speakLines(['语音主持试播。', '天黑请闭眼，白天请发言。'], { force: true });
+    },
+
+    getSettingsMarkup() {
+        const voiceOptions = this.voices.length
+            ? this.voices.map(voice => `
+                <option value="${voice.voiceURI}" ${voice.voiceURI === this.selectedVoiceURI ? 'selected' : ''}>
+                    ${(voice.name || '未命名语音')} · ${voice.lang || 'unknown'}
+                </option>
+            `).join('')
+            : '<option value="">正在加载语音列表…</option>';
+
+        return `
+            <div class="modal-title">🎙️ 语音主持</div>
+            <div class="modal-text">
+                ${this.supported
+                    ? (this.enabled ? '语音主持已开启。你可以在这里调整声音和语速。' : '开启后，系统会在关键阶段自动播报流程。')
+                    : '当前浏览器不支持语音合成，无法使用语音主持。'}
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">当前状态</div>
+                <div class="voice-setting-value">${this.supported ? (this.enabled ? '已开启' : '已关闭') : '浏览器不支持'}</div>
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">主持声音</div>
+                <select class="voice-select" onchange="voiceDirector.updateVoice(this.value)" ${!this.supported ? 'disabled' : ''}>
+                    ${voiceOptions}
+                </select>
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">语速 <span id="voice-rate-value">${this.rate.toFixed(2)}</span></div>
+                <input class="voice-range" type="range" min="0.75" max="1.25" step="0.05" value="${this.rate}" oninput="voiceDirector.updateRate(this.value)" ${!this.supported ? 'disabled' : ''}>
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">音量 <span id="voice-volume-value">${Math.round(this.volume * 100)}%</span></div>
+                <input class="voice-range" type="range" min="0.2" max="1" step="0.05" value="${this.volume}" oninput="voiceDirector.updateVolume(this.value)" ${!this.supported ? 'disabled' : ''}>
+            </div>
+            <div class="modal-buttons">
+                ${this.enabled
+                    ? `<button class="btn btn-secondary btn-block voice-gesture-control"
+                               ontouchend="return voiceDirector.handlePreviewTouch(event)"
+                               onclick="return voiceDirector.handlePreviewClick(event)">试播主持语音</button>
+                       <button class="btn btn-ghost btn-block" onclick="voiceDirector.disable()">关闭语音主持</button>`
+                    : `<button class="btn btn-primary btn-block voice-gesture-control"
+                               ontouchend="return voiceDirector.handleEnableTouch(event)"
+                               onclick="return voiceDirector.handleEnableClick(event)"
+                               ${!this.supported ? 'disabled' : ''}>开启语音主持</button>`}
+                <button class="btn btn-secondary btn-block" onclick="voiceDirector.openDiagnosticScreen()">进入语音自检页</button>
+                <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">关闭</button>
+            </div>
+        `;
+    },
+
+    showSettingsModal() {
+        this.loadVoices();
+        modalUI.show(this.getSettingsMarkup());
+    },
+
+    refreshSettingsModal() {
+        const modal = document.getElementById('modal-overlay');
+        const title = document.querySelector('#modal-content .modal-title');
+        if (!modal?.classList.contains('active') || title?.textContent !== '🎙️ 语音主持') return;
+        modalUI.show(this.getSettingsMarkup());
+    },
+
+    refreshEntryButton() {
+        const entry = document.getElementById('voice-host-entry-btn');
+        if (entry) entry.textContent = `🎙️ 语音主持：${this.enabled ? '开启' : '关闭'}`;
+    },
+
+    refreshFloatingButton() {
+        const btn = document.getElementById('voice-fab');
+        if (!btn) return;
+        const icon = !this.supported ? '🚫' : (this.enabled ? '🔊' : '🔇');
+        const label = !this.supported
+            ? '当前浏览器不支持语音主持'
+            : (this.enabled ? '关闭语音主持' : '开启语音主持');
+        btn.textContent = icon;
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        btn.classList.toggle('active', this.enabled && this.supported);
+        btn.classList.toggle('muted', !this.enabled && this.supported);
+        btn.classList.toggle('unsupported', !this.supported);
+    },
+
+    refreshControls() {
+        this.refreshEntryButton();
+        this.refreshFloatingButton();
+    },
+
+    openDiagnosticScreen() {
+        this.loadVoices();
+        this.diagnosticReturnScreenId = document.querySelector('.screen.active')?.id || 'screen-home';
+        modalUI.hide();
+        showScreen('screen-voice-diagnostic');
+        this.renderDiagnosticScreen();
+    },
+
+    closeDiagnosticScreen() {
+        showScreen(this.diagnosticReturnScreenId || 'screen-home');
+    },
+
+    renderDiagnosticScreen() {
+        const content = document.getElementById('voice-diagnostic-content');
+        const bottomBar = document.getElementById('voice-diagnostic-bottom-bar');
+        if (!content || !bottomBar) return;
+
+        content.innerHTML = `
+            <div class="diagnostic-card">
+                <h3>当前环境</h3>
+                <div class="diagnostic-grid">
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">API 支持</div>
+                        <div class="diagnostic-value">${this.supported ? '支持' : '不支持'}</div>
+                    </div>
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">语音主持开关</div>
+                        <div class="diagnostic-value">${this.enabled ? '已开启' : '已关闭'}</div>
+                    </div>
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">Voices 数量</div>
+                        <div class="diagnostic-value">${this.voices.length}</div>
+                    </div>
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">Synth 状态</div>
+                        <div class="diagnostic-value">${this.getSynthFlags()}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="diagnostic-card">
+                <h3>当前声音</h3>
+                <div class="diagnostic-grid">
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">选中的 Voice</div>
+                        <div class="diagnostic-value">${this.getVoiceLabel()}</div>
+                    </div>
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">语速 / 音量</div>
+                        <div class="diagnostic-value">${this.rate.toFixed(2)} / ${Math.round(this.volume * 100)}%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="diagnostic-card">
+                <h3>最近一次测试</h3>
+                <div class="diagnostic-grid">
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">最后事件</div>
+                        <div class="diagnostic-value">${this.lastSpeechEvent}</div>
+                    </div>
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">更新时间</div>
+                        <div class="diagnostic-value">${this.lastSpeechUpdatedAt}</div>
+                    </div>
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">测试文本</div>
+                        <div class="diagnostic-value">${this.lastSpeechText}</div>
+                    </div>
+                    <div class="diagnostic-item">
+                        <div class="diagnostic-label">错误信息</div>
+                        <div class="diagnostic-value">${this.lastSpeechError}</div>
+                    </div>
+                </div>
+                <div class="diagnostic-actions">
+                    <button class="btn btn-primary btn-block voice-gesture-control"
+                            ontouchend="return voiceDirector.handleDiagnosticTouch(event)"
+                            onclick="return voiceDirector.handleDiagnosticClick(event)">
+                        ▶︎ 运行最小发声测试
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="voiceDirector.refreshDiagnosticData()">
+                        刷新语音状态
+                    </button>
+                </div>
+            </div>
+            <div class="diagnostic-card">
+                <h3>怎么看结果</h3>
+                <div class="diagnostic-note">
+                    点“运行最小发声测试”后，如果页面能听到声音，且事件会依次出现 <strong>diag:onstart</strong> 和 <strong>diag:onend</strong>，说明 Safari 的原生 TTS 能工作。
+                    如果按钮点了但一直没有声音，通常会出现两种情况：一是事件根本没有进入 <strong>onstart</strong>，说明浏览器把发声请求吞掉了；二是进入了 <strong>onerror</strong>，这时页面会直接显示错误值。
+                </div>
+            </div>
+        `;
+
+        bottomBar.innerHTML = `
+            <button class="btn btn-ghost btn-block" onclick="voiceDirector.closeDiagnosticScreen()">
+                返回
+            </button>
+        `;
+    },
+
+    refreshDiagnosticScreen() {
+        const activeScreen = document.querySelector('.screen.active');
+        if (activeScreen?.id !== 'screen-voice-diagnostic') return;
+        this.renderDiagnosticScreen();
+    },
+
+    refreshDiagnosticData() {
+        this.loadVoices();
+        this.refreshDiagnosticScreen();
+    },
+
+    runDiagnosticTest() {
+        this.loadVoices();
+        this.lastSpeechText = '语音自检，现在开始。';
+        this.lastSpeechEvent = 'diag:requested';
+        this.lastSpeechError = '无';
+        this.lastSpeechUpdatedAt = this.nowLabel();
+        this.refreshDiagnosticScreen();
+
+        if (!this.supported) {
+            this.recordSpeechEvent('diag:unsupported', 'speechSynthesis unavailable');
+            return;
+        }
+
+        try {
+            const synth = window.speechSynthesis;
+            const utterance = new SpeechSynthesisUtterance(this.lastSpeechText);
+            const voice = this.getVoice();
+            if (voice) {
+                utterance.voice = voice;
+                utterance.lang = voice.lang || 'zh-CN';
+            } else {
+                utterance.lang = 'zh-CN';
+            }
+            utterance.volume = this.volume;
+            utterance.rate = this.rate;
+            utterance.pitch = this.pitch;
+            utterance.onstart = () => this.recordSpeechEvent('diag:onstart');
+            utterance.onend = () => this.recordSpeechEvent('diag:onend');
+            utterance.onerror = err => this.recordSpeechEvent('diag:onerror', err?.error || 'unknown');
+            if (typeof synth.resume === 'function') synth.resume();
+            synth.speak(utterance);
+            setTimeout(() => {
+                if (this.lastSpeechEvent === 'diag:requested') {
+                    this.recordSpeechEvent('diag:no-start-yet', this.getSynthFlags());
+                }
+            }, 1200);
+        } catch (err) {
+            this.recordSpeechEvent('diag:exception', err?.message || String(err));
+        }
     }
 };
 
@@ -1495,6 +2323,7 @@ const setupScreen = {
         }
 
         showScreen('screen-card-showcase');
+        voiceDirector.announce('showcase', { holders });
     },
 
     proceedToRoleReveal() {
@@ -1550,6 +2379,11 @@ const setupScreen = {
         const updateDisplay = () => {
             const player = gameState.players[currentIndex];
             document.getElementById('current-player-name').textContent = player.name;
+            voiceDirector.announce('roleReveal', {
+                player,
+                index: currentIndex,
+                total: gameState.players.length
+            });
 
             const container = document.getElementById('role-card-display');
             const hasPrivilege = (player.privilegeCards || []).length > 0;
@@ -1708,6 +2542,7 @@ const gameScreen = {
                 ✓ 夜晚结束
             </button>
         `;
+        voiceDirector.announce('nightStart', { round: gameState.currentRound });
     },
 
     selectNightKill(playerId, el) {
@@ -1773,6 +2608,10 @@ const gameScreen = {
                 💬 开始讨论
             </button>
         `;
+        voiceDirector.announce('dawn', {
+            killedPlayer,
+            aliveCount: gameState.alivePlayers.length
+        });
     },
 
     startDiscussion() {
@@ -1801,6 +2640,10 @@ const gameScreen = {
 
         if (this.discussionTimer) clearInterval(this.discussionTimer);
         let time = gameState.playerCount * 60;
+        let warned30 = false;
+        let warned10 = false;
+        let warned5 = false;
+        voiceDirector.announce('discussionStart', { minutes: gameState.playerCount });
         this.discussionTimer = setInterval(() => {
             time--;
             const min = Math.floor(time / 60);
@@ -1812,6 +2655,18 @@ const gameScreen = {
             if (time <= 10) {
                 el.style.color = 'var(--accent-red)';
                 el.style.animation = 'timerPulse 0.5s ease-in-out infinite';
+            }
+            if (time <= 30 && !warned30) {
+                warned30 = true;
+                voiceDirector.announce('discussionWarning', { seconds: 30 });
+            }
+            if (time <= 10 && !warned10) {
+                warned10 = true;
+                voiceDirector.announce('discussionWarning', { seconds: 10 });
+            }
+            if (time <= 5 && !warned5) {
+                warned5 = true;
+                voiceDirector.announce('discussionWarning', { seconds: 5 });
             }
             if (time <= 0) { clearInterval(this.discussionTimer); this.discussionTimer = null; }
         }, 1000);
@@ -1854,6 +2709,12 @@ const gameScreen = {
                 我是 ${voter.name}，准备好了 →
             </button>
         `;
+        voiceDirector.announce('voteHandoff', {
+            voter,
+            current,
+            total,
+            judge: false
+        });
     },
 
     showVoteBallot() {
@@ -1894,6 +2755,7 @@ const gameScreen = {
                 ✓ 确认投票
             </button>
         `;
+        voiceDirector.announce('voteBallot', { voter, judge: false });
     },
 
     selectVoteTarget(targetId) {
@@ -1981,6 +2843,11 @@ const gameScreen = {
                 💀 消灭 ${eliminated.name}
             </button>
         `;
+        voiceDirector.announce('voteTally', {
+            eliminated,
+            tiedPlayers,
+            canJudge: privilegeManager.canUseJudge(eliminated)
+        });
     },
 
     eliminateVoted(playerId) {
@@ -2034,6 +2901,7 @@ const gameScreen = {
                 </button>
             </div>
         `;
+        voiceDirector.announce('gameEnd', { winner });
     },
 
     showPunishmentFlow(idx) {
@@ -2262,6 +3130,11 @@ const privilegeManager = {
                 </div>
             </div>
         `);
+        voiceDirector.announce('publicCard', {
+            holderName: this.getHolder()?.name || '持卡玩家',
+            cardName: card.name,
+            leadText
+        });
     },
 
     confirmPublicCardAnnouncement() {
@@ -2555,6 +3428,7 @@ const privilegeManager = {
             if (t <= 10) el.style.color = 'var(--accent-red)';
             if (t <= 0) { clearInterval(this.judgeTimer); this.judgeTimer = null; }
         }, 1000);
+        voiceDirector.announce('judgeDefense', { holderName: holder.name });
     },
 
     showJudgeQuestion() {
@@ -2586,6 +3460,7 @@ const privilegeManager = {
             if (t <= 10) el.style.color = 'var(--accent-red)';
             if (t <= 0) { clearInterval(this.judgeTimer); this.judgeTimer = null; }
         }, 1000);
+        voiceDirector.announce('judgeQuestion', { holderName: holder.name });
     },
 
     startJudgeVote() {
@@ -2620,6 +3495,13 @@ const privilegeManager = {
                 我是 ${voter.name}，准备好了 →
             </button>
         `;
+        voiceDirector.announce('voteHandoff', {
+            voter,
+            current,
+            total,
+            judge: true,
+            defendant: this.judgeState.defendant
+        });
     },
 
     showJudgeVoteBallot() {
@@ -2653,6 +3535,11 @@ const privilegeManager = {
                 ✓ 确认投票
             </button>
         `;
+        voiceDirector.announce('voteBallot', {
+            voter,
+            judge: true,
+            defendant: this.judgeState.defendant
+        });
     },
 
     selectJudgeVote(choice) {
@@ -2726,6 +3613,10 @@ const privilegeManager = {
                 </button>
             `;
         }
+        voiceDirector.announce('judgeResult', {
+            succeeded: judgmentSucceeded,
+            defendantName: defendant.name
+        });
     },
 
     finishJudgeAndEliminate() {
@@ -2872,6 +3763,7 @@ window.onerror = function(msg, src, line) {
 
 // JS 加载成功时，更新首页副标题，让用户知道 JS 正常运行
 document.addEventListener('DOMContentLoaded', function() {
+    voiceDirector.init();
     var sub = document.querySelector('.home-subtitle');
     if (sub) sub.innerHTML = '特权卡版 <span style="font-size:13px;color:#7fff6e;">✓ v7</span>';
 });
@@ -2885,6 +3777,7 @@ document.getElementById('app-root').addEventListener('touchend', function(e) {
         '.gender-toggle, .header-back, [onclick]'
     );
     if (!target) return;
+    if (target.closest('.voice-gesture-control')) return;
     // 阻止浏览器再合成一次 click（防止双触发）
     e.preventDefault();
     // 手动派发 click 事件
