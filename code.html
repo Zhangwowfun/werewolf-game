@@ -329,6 +329,45 @@
             outline: none;
         }
 
+        .voice-fab {
+            position: fixed;
+            right: 18px;
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            width: 58px;
+            height: 58px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(18,18,42,0.92);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.34);
+            backdrop-filter: blur(10px);
+            z-index: 90;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .voice-fab.active {
+            border-color: rgba(127,255,110,0.55);
+            box-shadow: 0 12px 30px rgba(127,255,110,0.18);
+        }
+
+        .voice-fab.muted {
+            color: var(--text-secondary);
+        }
+
+        .voice-fab.unsupported {
+            color: var(--text-dim);
+            border-color: rgba(255,71,87,0.2);
+        }
+
+        .voice-fab:active {
+            transform: scale(0.94);
+        }
+
         .game-grid {
             display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
             padding: 10px 0;
@@ -828,6 +867,15 @@
             }
             .card-showcase-title { font-size: 32px; }
 
+            .voice-fab {
+                width: 68px;
+                height: 68px;
+                font-size: 32px;
+                right: 24px;
+                bottom: calc(24px + env(safe-area-inset-bottom));
+                border-radius: 20px;
+            }
+
             /* 玩家/投票卡 */
             .player-card,
             .vote-candidate {
@@ -907,6 +955,11 @@
 
             .home-buttons {
                 max-width: 460px;
+            }
+
+            .voice-fab {
+                right: calc(50% - 540px + 24px);
+                bottom: 30px;
             }
 
             .card-grid {
@@ -1134,6 +1187,15 @@
 <div id="modal-overlay" class="modal-overlay">
     <div class="modal" id="modal-content"></div>
 </div>
+
+<button id="voice-fab"
+        class="voice-fab muted voice-gesture-control"
+        type="button"
+        aria-label="开启语音主持"
+        ontouchend="return voiceDirector.handleToggleTouch(event)"
+        onclick="return voiceDirector.handleToggleClick(event)">
+    🔇
+</button>
 
 <script>
 // =====================================================
@@ -1444,7 +1506,7 @@ const voiceDirector = {
         this.loadSettings();
         this.bindVoiceEvents();
         this.loadVoices();
-        this.refreshEntryButton();
+        this.refreshControls();
     },
 
     bindVoiceEvents() {
@@ -1530,6 +1592,7 @@ const voiceDirector = {
 
         const token = ++this.queueToken;
         if (options.replace !== false) window.speechSynthesis.cancel();
+        if (typeof window.speechSynthesis.resume === 'function') window.speechSynthesis.resume();
 
         const speakNext = index => {
             if (token !== this.queueToken || index >= queue.length) return;
@@ -1563,7 +1626,7 @@ const voiceDirector = {
         this.enabled = true;
         this.loadVoices();
         this.saveSettings();
-        this.refreshEntryButton();
+        this.refreshControls();
         this.refreshSettingsModal();
         this.speakLines(['语音主持已开启。', '接下来我会为你播报游戏流程。'], { force: true });
     },
@@ -1572,8 +1635,62 @@ const voiceDirector = {
         this.enabled = false;
         this.stop();
         this.saveSettings();
-        this.refreshEntryButton();
+        this.refreshControls();
         this.refreshSettingsModal();
+    },
+
+    toggleFromGesture() {
+        if (!this.supported) {
+            modalUI.show(`
+                <div class="modal-title">语音不可用</div>
+                <div class="modal-text">当前浏览器不支持网页语音主持。</div>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary btn-block" onclick="modalUI.hide()">知道了</button>
+                </div>
+            `);
+            return;
+        }
+        if (this.enabled) {
+            this.disable();
+        } else {
+            this.enableFromGesture();
+        }
+    },
+
+    runTrustedAction(event, action) {
+        if (event) {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+        action();
+        return false;
+    },
+
+    handleToggleTouch(event) {
+        return this.runTrustedAction(event, () => this.toggleFromGesture());
+    },
+
+    handleToggleClick(event) {
+        if (event && !event.isTrusted) return false;
+        return this.runTrustedAction(event, () => this.toggleFromGesture());
+    },
+
+    handleEnableTouch(event) {
+        return this.runTrustedAction(event, () => this.enableFromGesture());
+    },
+
+    handleEnableClick(event) {
+        if (event && !event.isTrusted) return false;
+        return this.runTrustedAction(event, () => this.enableFromGesture());
+    },
+
+    handlePreviewTouch(event) {
+        return this.runTrustedAction(event, () => this.preview());
+    },
+
+    handlePreviewClick(event) {
+        if (event && !event.isTrusted) return false;
+        return this.runTrustedAction(event, () => this.preview());
     },
 
     updateVoice(voiceURI) {
@@ -1597,6 +1714,7 @@ const voiceDirector = {
 
     preview() {
         if (!this.supported) return;
+        if (typeof window.speechSynthesis.resume === 'function') window.speechSynthesis.resume();
         this.speakLines(['语音主持试播。', '天黑请闭眼，白天请发言。'], { force: true });
     },
 
@@ -1636,9 +1754,14 @@ const voiceDirector = {
             </div>
             <div class="modal-buttons">
                 ${this.enabled
-                    ? `<button class="btn btn-secondary btn-block" onclick="voiceDirector.preview()">试播主持语音</button>
+                    ? `<button class="btn btn-secondary btn-block voice-gesture-control"
+                               ontouchend="return voiceDirector.handlePreviewTouch(event)"
+                               onclick="return voiceDirector.handlePreviewClick(event)">试播主持语音</button>
                        <button class="btn btn-ghost btn-block" onclick="voiceDirector.disable()">关闭语音主持</button>`
-                    : `<button class="btn btn-primary btn-block" onclick="voiceDirector.enableFromGesture()" ${!this.supported ? 'disabled' : ''}>开启语音主持</button>`}
+                    : `<button class="btn btn-primary btn-block voice-gesture-control"
+                               ontouchend="return voiceDirector.handleEnableTouch(event)"
+                               onclick="return voiceDirector.handleEnableClick(event)"
+                               ${!this.supported ? 'disabled' : ''}>开启语音主持</button>`}
                 <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">关闭</button>
             </div>
         `;
@@ -1659,6 +1782,26 @@ const voiceDirector = {
     refreshEntryButton() {
         const entry = document.getElementById('voice-host-entry-btn');
         if (entry) entry.textContent = `🎙️ 语音主持：${this.enabled ? '开启' : '关闭'}`;
+    },
+
+    refreshFloatingButton() {
+        const btn = document.getElementById('voice-fab');
+        if (!btn) return;
+        const icon = !this.supported ? '🚫' : (this.enabled ? '🔊' : '🔇');
+        const label = !this.supported
+            ? '当前浏览器不支持语音主持'
+            : (this.enabled ? '关闭语音主持' : '开启语音主持');
+        btn.textContent = icon;
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        btn.classList.toggle('active', this.enabled && this.supported);
+        btn.classList.toggle('muted', !this.enabled && this.supported);
+        btn.classList.toggle('unsupported', !this.supported);
+    },
+
+    refreshControls() {
+        this.refreshEntryButton();
+        this.refreshFloatingButton();
     }
 };
 
@@ -3345,6 +3488,7 @@ document.getElementById('app-root').addEventListener('touchend', function(e) {
         '.gender-toggle, .header-back, [onclick]'
     );
     if (!target) return;
+    if (target.closest('.voice-gesture-control')) return;
     // 阻止浏览器再合成一次 click（防止双触发）
     e.preventDefault();
     // 手动派发 click 事件
