@@ -1,0 +1,3357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="狼人杀">
+    <title>狼人杀 · 特权卡版</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: #1a1a3e;
+            --bg-card-hover: #242456;
+            --accent-green: #7fff6e;
+            --accent-lime: #b8ff57;
+            --accent-red: #ff4757;
+            --accent-blue: #57b8ff;
+            --accent-purple: #b457ff;
+            --accent-yellow: #ffd557;
+            --accent-orange: #ff9f43;
+            --accent-pink: #ff6b9d;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0cc;
+            --text-dim: #606088;
+            --border-color: #2a2a5a;
+            --shadow: 0 4px 20px rgba(0,0,0,0.4);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        html, body {
+            width: 100%; height: 100%;
+            margin: 0; padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        /* 全屏 App 容器：用 fixed div 代替 position:fixed 在 body 上 */
+        #app-root {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%; height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            animation: fadeIn 0.3s ease;
+        }
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            padding: 20px 24px 10px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 22px; font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-lime));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-back {
+            width: 40px; height: 40px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer; color: var(--text-primary);
+            transition: var(--transition);
+        }
+        .header-back:active { transform: scale(0.9); background: var(--bg-card-hover); }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 10px 24px 24px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 16px 32px; border-radius: var(--radius);
+            font-size: 17px; font-weight: 600;
+            border: none; cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        .btn:active { transform: scale(0.96); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-lime));
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-block { width: 100%; }
+        .btn-lg { padding: 18px 36px; font-size: 19px; border-radius: 20px; }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+
+        .home-container {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100%; padding: 40px; text-align: center;
+        }
+
+        .home-logo {
+            font-size: 80px; margin-bottom: 16px;
+        }
+
+        .home-title {
+            font-size: 42px; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-lime), var(--accent-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .home-subtitle {
+            font-size: 18px; color: var(--text-secondary);
+            margin-bottom: 48px;
+        }
+
+        .home-buttons {
+            display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px;
+        }
+
+        .setup-section {
+            margin-bottom: 24px;
+        }
+
+        .setup-label {
+            font-size: 15px; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .player-count-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        }
+
+        .player-count-btn {
+            padding: 20px 10px; border-radius: var(--radius);
+            background: var(--bg-card); border: 2px solid var(--border-color);
+            color: var(--text-primary); font-size: 24px; font-weight: 700;
+            cursor: pointer; transition: var(--transition);
+            text-align: center;
+        }
+        .player-count-btn.selected {
+            border-color: var(--accent-green);
+            background: rgba(127,255,110,0.1);
+        }
+        .player-count-btn span {
+            display: block; font-size: 12px; font-weight: 400;
+            color: var(--text-secondary); margin-top: 4px;
+        }
+
+        .name-input-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .name-input-row {
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .name-input {
+            flex: 1; padding: 14px 16px; border-radius: var(--radius-sm);
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            color: var(--text-primary); font-size: 16px;
+            outline: none;
+        }
+        .name-input:focus {
+            border-color: var(--accent-green);
+        }
+
+        .role-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px; border-radius: var(--radius-sm);
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+        }
+
+        .role-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; flex-shrink: 0;
+        }
+
+        .role-info { flex: 1; }
+        .role-name { font-size: 16px; font-weight: 600; }
+        .role-desc { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        .card-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+        }
+
+        .card-option {
+            padding: 16px; border-radius: var(--radius);
+            background: var(--bg-card); border: 2px solid var(--border-color);
+            cursor: pointer; transition: var(--transition);
+        }
+        .card-option.selected {
+            border-color: var(--accent-lime);
+            background: rgba(184,255,87,0.08);
+        }
+
+        .card-emoji { font-size: 32px; margin-bottom: 6px; }
+        .card-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .card-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+
+        .bottom-bar {
+            padding: 16px 24px; padding-bottom: max(16px, env(safe-area-inset-bottom));
+            flex-shrink: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 28px;
+            max-width: 420px; width: 100%;
+        }
+
+        .modal-title {
+            font-size: 22px; font-weight: 700;
+            text-align: center; margin-bottom: 8px;
+        }
+
+        .modal-text {
+            font-size: 15px; color: var(--text-secondary);
+            text-align: center; margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .voice-setting-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .voice-setting-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .voice-setting-value {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .voice-range {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .voice-select {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 15px;
+            outline: none;
+        }
+
+        .game-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+            padding: 10px 0;
+        }
+
+        .player-card {
+            padding: 14px; border-radius: var(--radius);
+            background: var(--bg-card); border: 2px solid var(--border-color);
+            cursor: pointer; transition: var(--transition);
+        }
+        .player-card.selected {
+            border-color: var(--accent-red);
+            background: rgba(255,71,87,0.1);
+        }
+
+        .player-name {
+            font-size: 15px; font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .player-status {
+            font-size: 13px; color: var(--text-secondary);
+        }
+
+        .game-title {
+            font-size: 28px; font-weight: 800;
+            text-align: center; margin: 20px 0;
+        }
+
+        .game-subtitle {
+            font-size: 16px; color: var(--text-secondary);
+            text-align: center; margin-bottom: 20px;
+        }
+
+        .divider {
+            height: 1px; background: var(--border-color);
+            margin: 16px 0;
+        }
+
+        .timer-large {
+            font-size: 72px; font-weight: 800;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            margin: 30px 0;
+        }
+
+        /* ─── 新增美化样式 ─── */
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.88) translateY(8px); opacity: 0; }
+            to   { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .phase-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 16px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; letter-spacing: 0.4px;
+            margin-bottom: 16px;
+        }
+        .phase-badge.night  { background: rgba(88,28,135,0.35); color: #c084fc; border: 1px solid rgba(192,132,252,0.3); }
+        .phase-badge.day    { background: rgba(161,98,7,0.35);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .phase-badge.vote   { background: rgba(153,27,27,0.35); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+
+        .player-avatar {
+            width: 56px; height: 56px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 34px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--bg-card-hover), var(--bg-card));
+            border: 1px solid var(--border-color);
+        }
+
+        /* 性别切换按钮 */
+        .gender-toggle {
+            width: 52px; height: 52px; border-radius: 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            font-size: 28px; cursor: pointer;
+            transition: var(--transition); flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .gender-toggle:active { transform: scale(0.88); }
+
+        /* 惩罚抽签 */
+        .punish-spin-box {
+            width: 100%; min-height: 130px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,71,87,0.35);
+            background: linear-gradient(135deg, rgba(255,71,87,0.08), rgba(255,159,67,0.06));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; font-weight: 800;
+            color: var(--text-dim);
+            margin: 20px 0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .punish-spin-box.spinning {
+            border-color: rgba(255,71,87,0.70);
+            box-shadow: 0 0 28px rgba(255,71,87,0.20);
+        }
+        .punish-spin-box.revealed {
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 40px rgba(255,71,87,0.28);
+            font-size: 34px;
+        }
+
+        .vote-candidate {
+            display: flex; align-items: center; gap: 14px;
+            padding: 16px; border-radius: var(--radius);
+            background: var(--bg-card); border: 2px solid var(--border-color);
+            cursor: pointer; transition: var(--transition); margin-bottom: 8px;
+            animation: popIn 0.22s ease both;
+        }
+        .vote-candidate:active { transform: scale(0.97); }
+        .vote-candidate.selected {
+            border-color: var(--accent-red);
+            background: rgba(255,71,87,0.1);
+            box-shadow: 0 0 0 1px rgba(255,71,87,0.25), 0 6px 24px rgba(255,71,87,0.15);
+        }
+        .vote-candidate .player-name-label { font-size: 16px; font-weight: 600; flex: 1; }
+        .vote-candidate .vote-check { font-size: 20px; opacity: 0; transition: opacity 0.18s; }
+        .vote-candidate.selected .vote-check { opacity: 1; }
+
+        .vote-progress-bar {
+            display: flex; gap: 6px; justify-content: center; margin-bottom: 20px;
+        }
+        .vote-dot {
+            height: 4px; border-radius: 2px; flex: 1; max-width: 44px;
+            background: var(--border-color); transition: background 0.3s;
+        }
+        .vote-dot.done   { background: var(--accent-green); }
+        .vote-dot.active { background: var(--accent-yellow); }
+
+        .tally-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px; border-radius: var(--radius-sm);
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            margin-bottom: 8px; animation: popIn 0.25s ease both;
+        }
+        .tally-row.top { border-color: rgba(255,71,87,0.5); background: rgba(255,71,87,0.07); }
+        .tally-bar-wrap { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; }
+        .tally-bar { height: 100%; border-radius: 3px; background: var(--accent-green); transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+        .tally-row.top .tally-bar { background: var(--accent-red); }
+
+        .handoff-screen {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; min-height: calc(100% - 100px);
+            text-align: center; padding: 40px 24px;
+        }
+
+        .stat-row {
+            display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+        }
+        .stat-chip {
+            padding: 8px 16px; border-radius: 100px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .stat-chip strong { color: var(--text-primary); }
+
+        .dawn-card {
+            margin: 20px auto; padding: 24px; border-radius: var(--radius);
+            max-width: 300px; text-align: center;
+            animation: popIn 0.3s ease;
+        }
+        .dawn-card.killed { background: rgba(255,71,87,0.07); border: 1px solid rgba(255,71,87,0.3); }
+        .dawn-card.safe   { background: rgba(127,255,110,0.06); border: 1px solid rgba(127,255,110,0.3); }
+
+        .info-box {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius); padding: 16px;
+            font-size: 13px; color: var(--text-dim); line-height: 2;
+            margin-bottom: 20px;
+        }
+
+        .btn-red {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: #fff; border: none;
+        }
+        .btn-red:active { transform: scale(0.96); }
+
+        .card-showcase-wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 8px 0 18px;
+        }
+
+        .card-showcase-title {
+            font-size: 28px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-showcase-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .showcase-card {
+            border-radius: 20px;
+            border: 1px solid rgba(255, 213, 87, 0.35);
+            background: linear-gradient(145deg, rgba(30, 20, 60, 0.96), rgba(20, 20, 42, 0.96));
+            padding: 18px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
+            animation: popIn 0.24s ease both;
+        }
+
+        .showcase-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .showcase-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 213, 87, 0.38);
+            background: rgba(255, 213, 87, 0.09);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .showcase-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-yellow);
+        }
+
+        .showcase-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .showcase-desc {
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        /* ── 全屏特权卡展示 ── */
+        .priv-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 单人：整屏居中 */
+        .priv-single {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 24px;
+            background: radial-gradient(ellipse at 50% 30%, rgba(255,213,87,0.10) 0%, transparent 65%);
+        }
+
+        /* 双人：上下对分 */
+        .priv-dual {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .priv-half {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 20px;
+            position: relative;
+        }
+
+        .priv-half:first-child {
+            background: radial-gradient(ellipse at 50% 60%, rgba(255,213,87,0.10) 0%, transparent 70%);
+            border-bottom: 1px solid rgba(255,213,87,0.20);
+        }
+
+        .priv-half:last-child {
+            background: radial-gradient(ellipse at 50% 40%, rgba(255,107,157,0.10) 0%, transparent 70%);
+        }
+
+        .priv-holder-label {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .priv-holder-name {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+
+        .priv-half .priv-holder-name {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        /* 英雄卡片 */
+        .priv-hero-card {
+            width: 100%;
+            max-width: 380px;
+            border-radius: 24px;
+            border: 1.5px solid rgba(255,213,87,0.40);
+            background: linear-gradient(145deg, rgba(36,24,72,0.98), rgba(18,18,42,0.98));
+            box-shadow: 0 20px 60px rgba(0,0,0,0.50), 0 0 40px rgba(255,213,87,0.08);
+            padding: 28px 24px;
+            text-align: center;
+            animation: popIn 0.3s ease both;
+        }
+
+        .priv-half .priv-hero-card {
+            padding: 18px 16px;
+            border-radius: 18px;
+        }
+
+        .priv-hero-emoji {
+            font-size: 68px;
+            line-height: 1;
+            margin-bottom: 14px;
+        }
+
+        .priv-half .priv-hero-emoji {
+            font-size: 44px;
+            margin-bottom: 8px;
+        }
+
+        .priv-hero-name {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--accent-yellow);
+            margin-bottom: 4px;
+        }
+
+        .priv-half .priv-hero-name {
+            font-size: 20px;
+        }
+
+        .priv-hero-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+        }
+
+        .priv-half .priv-hero-title {
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .priv-hero-divider {
+            width: 40px;
+            height: 1px;
+            background: rgba(255,213,87,0.30);
+            margin: 0 auto 14px;
+        }
+
+        .priv-hero-desc {
+            font-size: 13px;
+            line-height: 1.75;
+            color: var(--text-secondary);
+            text-align: left;
+        }
+
+        .priv-half .priv-hero-desc {
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .public-card-stage {
+            text-align: center;
+        }
+
+        .public-card-stage .showcase-card {
+            margin: 14px 0 16px;
+            text-align: left;
+        }
+
+        /* iPad 通用适配（竖屏 + 非 12.9 横屏）
+           命中：iPad mini / Air / Pro 11 / Pro 12.9 竖屏 & 所有 iPad 竖屏
+           不命中：手机（<768），也不抢 1024+ landscape 那条更精细的规则 */
+        @media (min-width: 768px) and (max-width: 1279px),
+               (min-width: 1024px) and (orientation: portrait) {
+
+            /* 字号放大 */
+            .home-logo { font-size: 110px; }
+            .home-title { font-size: 56px; }
+            .home-subtitle { font-size: 22px; margin-bottom: 56px; }
+            .header-title { font-size: 28px; }
+            .setup-label { font-size: 18px; }
+
+            /* 按钮 */
+            .btn {
+                font-size: 20px;
+                padding: 20px 36px;
+                min-height: 64px;
+                border-radius: 20px;
+            }
+            .btn-lg {
+                font-size: 24px;
+                padding: 22px 40px;
+                border-radius: 22px;
+            }
+            .header-back {
+                width: 52px; height: 52px;
+                font-size: 24px;
+                border-radius: 14px;
+            }
+
+            /* 布局 padding */
+            .header { padding: 28px 36px 14px; }
+            .content { padding: 14px 36px 32px; }
+            .bottom-bar { padding: 22px 36px; padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+            .setup-section { margin-bottom: 32px; }
+
+            /* 人数选择 */
+            .player-count-btn {
+                padding: 28px 12px;
+                font-size: 32px;
+                min-height: 84px;
+                border-radius: 20px;
+            }
+            .player-count-btn span { font-size: 14px; }
+            .player-count-grid { gap: 14px; }
+
+            /* 姓名输入 */
+            .name-input {
+                font-size: 19px;
+                padding: 18px 20px;
+                border-radius: 14px;
+            }
+            .name-input-list { gap: 12px; }
+
+            /* 角色列表 */
+            .role-item {
+                padding: 18px 20px;
+                min-height: 72px;
+                border-radius: 14px;
+                gap: 16px;
+            }
+            .role-icon {
+                width: 64px; height: 64px;
+                font-size: 36px;
+                border-radius: 16px;
+            }
+            .role-name { font-size: 19px; }
+            .role-desc { font-size: 15px; }
+
+            /* 特权卡网格 */
+            .card-grid { gap: 14px; }
+            .card-option {
+                padding: 20px;
+                min-height: 140px;
+                border-radius: 20px;
+            }
+            .card-emoji { font-size: 44px; margin-bottom: 8px; }
+            .card-name { font-size: 18px; }
+            .card-desc { font-size: 14px; }
+
+            /* 通用 card */
+            .card { padding: 20px; border-radius: 20px; }
+
+            /* 特权卡展示 */
+            .showcase-card {
+                min-height: 240px;
+                padding: 24px;
+                border-radius: 22px;
+            }
+            .card-showcase-title { font-size: 32px; }
+
+            /* 玩家/投票卡 */
+            .player-card,
+            .vote-candidate {
+                min-height: 72px;
+                border-radius: 18px;
+            }
+            .player-avatar {
+                width: 64px; height: 64px;
+                font-size: 36px;
+            }
+
+            /* 角色传阅页 — iPad 版 */
+            .content.reveal-content {
+                padding: 28px 40px 16px;
+            }
+            .reveal-name-label {
+                font-size: 32px;
+                margin-bottom: 24px;
+            }
+            .reveal-card-row {
+                gap: 20px;
+                max-width: 760px;   /* 不让卡片在 1024px 屏幕上横得离谱 */
+                margin: 0 auto;
+            }
+            .reveal-progress {
+                font-size: 16px;
+                margin-top: 14px;
+            }
+            #role-flip-card {
+                padding: 40px !important;
+                border-radius: 28px !important;
+                border-width: 3px !important;
+            }
+            /* 放大翻牌后的内容（针对 JS 拼出的 inline style） */
+            #role-card-display [style*="font-size:110px"] { font-size: 180px !important; }
+            #role-card-display [style*="font-size:150px"] { font-size: 220px !important; }
+            #role-card-display [style*="font-size:28px"]  { font-size: 38px !important; }
+            #role-card-display [style*="font-size:20px"]  { font-size: 26px !important; }
+            #role-card-display [style*="font-size:13px"]  { font-size: 17px !important; }
+            #role-card-display [style*="font-size:11px"]  { font-size: 14px !important; }
+
+            /* 左右翻页按钮：宽一点，字号大一点，高度由 stretch 决定 */
+            .side-nav-btn {
+                flex-basis: 72px;
+                font-size: 48px;
+                border-radius: 20px;
+                border-width: 3px;
+            }
+        }
+
+        /* iPad Pro 12.9 横屏优化 */
+        @media (min-width: 1024px) and (orientation: landscape) {
+            .screen {
+                max-width: 1180px;
+                margin: 0 auto;
+                left: 0;
+                right: 0;
+            }
+
+            .header,
+            .content,
+            .bottom-bar {
+                width: 100%;
+                padding-left: 32px;
+                padding-right: 32px;
+            }
+
+            .content {
+                max-width: 1080px;
+                margin: 0 auto;
+            }
+
+            .home-container {
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            .home-buttons {
+                max-width: 460px;
+            }
+
+            .card-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 14px;
+            }
+
+            .showcase-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+            }
+
+            .btn,
+            .header-back,
+            .player-count-btn,
+            .card-option,
+            .vote-candidate,
+            .player-card {
+                min-height: 56px;
+            }
+
+            .role-icon,
+            .player-avatar {
+                width: 62px;
+                height: 62px;
+                font-size: 38px;
+            }
+
+            .card-emoji {
+                font-size: 36px;
+            }
+
+            #role-card-display {
+                width: 300px !important;
+                height: 380px !important;
+            }
+
+            .card-showcase-title {
+                font-size: 34px;
+            }
+
+            .showcase-card {
+                min-height: 220px;
+                padding: 20px;
+            }
+        }
+
+        /* ===== 角色传阅页 ===== */
+        .content.reveal-content {
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px 8px;
+            overflow: hidden;   /* 主区不自己滚，让卡片自适应高度 */
+        }
+        .reveal-name-label {
+            flex-shrink: 0;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 16px;
+        }
+        .reveal-card-row {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            align-items: stretch;   /* 关键：按钮和卡片等高 */
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .reveal-card-slot {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+        }
+        .reveal-progress {
+            flex-shrink: 0;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 10px;
+        }
+        /* 左右翻页按钮：用 stretch 与卡片同高，不再硬编码 vh */
+        .side-nav-btn {
+            flex: 0 0 44px;
+            align-self: stretch;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            background: rgba(30, 30, 70, 0.35);
+            color: var(--text-primary);
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            touch-action: manipulation;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .side-nav-btn:active {
+            background: rgba(60, 60, 120, 0.5);
+            transform: scale(0.96);
+        }
+        .side-nav-btn:disabled,
+        .side-nav-btn[hidden] {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<div id="app-root">
+
+<!-- 首页 -->
+<div id="screen-home" class="screen active">
+    <div class="home-container">
+        <div class="home-logo">😏🦁</div>
+        <div class="home-title">狼人杀</div>
+        <div class="home-subtitle">特权卡版</div>
+        <div class="home-buttons">
+            <button class="btn btn-primary btn-lg btn-block" onclick="setupScreen.init()">
+                🎮 开始新游戏
+            </button>
+            <button class="btn btn-secondary btn-lg btn-block" onclick="showRulesModal()">
+                📖 游戏规则
+            </button>
+            <button id="voice-host-entry-btn" class="btn btn-ghost btn-block" onclick="voiceDirector.showSettingsModal()">
+                🎙️ 语音主持：关闭
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 设置 - 人数选择 -->
+<div id="screen-setup" class="screen">
+    <div class="header">
+        <button class="header-back" onclick="gameState.goHome()">←</button>
+        <div class="header-title">新游戏</div>
+        <div style="width:40px"></div>
+    </div>
+    <div class="content">
+        <div class="setup-section">
+            <div class="setup-label">👥 选择玩家人数</div>
+            <div class="player-count-grid" id="player-count-grid"></div>
+        </div>
+
+        <div class="setup-section" id="role-info-section" style="display:none">
+            <div class="setup-label">⚔️ 角色配置</div>
+            <div id="role-info" class="role-composition"></div>
+        </div>
+
+        <div class="setup-section" id="names-section" style="display:none">
+            <div class="setup-label">✏️ 玩家名称</div>
+            <div id="names-input-list"></div>
+        </div>
+
+        <div class="setup-section" id="cards-section" style="display:none">
+            <div class="setup-label">🎴 特权卡</div>
+            <div style="font-size:12px;color:var(--text-dim);margin:-4px 0 12px;">最后一位玩家将持有所选特权卡（可选 0 ~ 3 张）</div>
+            <div id="cards-grid" class="card-grid"></div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <button id="btn-setup-next" class="btn btn-primary btn-block" style="display:none" onclick="setupScreen.nextStep()">
+            下一步 →
+        </button>
+    </div>
+</div>
+
+<!-- 特权卡展示（大页面） -->
+<div id="screen-card-showcase" class="screen">
+    <div id="card-showcase-stage" class="priv-stage"></div>
+    <div class="bottom-bar">
+        <button class="btn btn-primary btn-block btn-lg" onclick="setupScreen.proceedToRoleReveal()">
+            继续 · 分配角色 →
+        </button>
+    </div>
+</div>
+
+<!-- 角色查看（传阅模式） -->
+<div id="screen-role-reveal" class="screen">
+    <div class="header">
+        <div style="width:40px"></div>
+        <div class="header-title">角色分配</div>
+        <button class="header-back" onclick="gameState.goHome()">X</button>
+    </div>
+    <div class="content reveal-content">
+        <div class="reveal-name-label">
+            <span id="current-player-name"></span> 的角色
+        </div>
+        <div class="reveal-card-row">
+            <button id="reveal-prev-btn" class="side-nav-btn" aria-label="上一个">‹</button>
+            <div id="role-card-display" class="reveal-card-slot"></div>
+            <button id="reveal-next-btn" class="side-nav-btn" aria-label="下一个">›</button>
+        </div>
+        <div class="reveal-progress" id="reveal-progress"></div>
+    </div>
+    <div class="bottom-bar">
+        <div id="reveal-nav"></div>
+    </div>
+</div>
+
+<!-- 游戏主界面 -->
+<div id="screen-game" class="screen">
+    <div class="header">
+        <button class="header-back" onclick="voiceDirector.showSettingsModal()">🎙️</button>
+        <div class="header-title" id="game-phase-text">游戏进行中</div>
+        <button class="header-back" onclick="gameState.goHome()">X</button>
+    </div>
+    <div class="content">
+        <div id="game-content"></div>
+    </div>
+    <div class="bottom-bar" id="game-bottom-bar"></div>
+</div>
+
+<!-- 游戏结束 -->
+<div id="screen-game-over" class="screen">
+    <div class="content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div id="game-over-content"></div>
+    </div>
+</div>
+
+<!-- 模态框 -->
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// =====================================================
+// 主题图示映射（美女与野兽风格）
+// =====================================================
+
+const THEME_ICON_MAP = {
+    role: {
+        wolf: '🐺',
+        villager: '🧔‍♂️',
+        seer: '🌙',
+        doctor: '✨'
+    },
+    privilegeCard: {
+        provoker: '💃🔥',
+        disruptor: '💃🎭',
+        judge: '💃👑'
+    }
+};
+
+const ROLE_META = {
+    wolf: { name: '狼人', desc: '夜晚消灭村民' },
+    villager: { name: '村民', desc: '白天投票消灭狼人' },
+    seer: { name: '预言家', desc: '夜晚查看一个玩家的身份' },
+    doctor: { name: '医生', desc: '夜晚保护一个玩家' }
+};
+
+function getRoleKey(roleValue) {
+    if (ROLE_META[roleValue]) return roleValue;
+    if (roleValue.includes('狼人')) return 'wolf';
+    if (roleValue.includes('村民')) return 'villager';
+    if (roleValue.includes('预言家')) return 'seer';
+    if (roleValue.includes('医生')) return 'doctor';
+    return 'villager';
+}
+
+function getRoleIcon(roleValue) {
+    const roleKey = getRoleKey(roleValue);
+    return THEME_ICON_MAP.role[roleKey] || '❔';
+}
+
+function getRoleName(roleValue) {
+    const roleKey = getRoleKey(roleValue);
+    return ROLE_META[roleKey]?.name || roleValue;
+}
+
+function getRoleDisplay(roleValue) {
+    return `${getRoleIcon(roleValue)}${getRoleName(roleValue)}`;
+}
+
+function playerAvatar(player) {
+    return player?.gender === 'female' ? '👩' : '👨';
+}
+
+function getFactionIcon(isWolf) {
+    return isWolf ? THEME_ICON_MAP.role.wolf : THEME_ICON_MAP.role.villager;
+}
+
+// =====================================================
+// 特权卡定义
+// =====================================================
+
+const PRIVILEGE_CARD_LIST = [
+    {
+        id: 'provoker',
+        emoji: THEME_ICON_MAP.privilegeCard.provoker,
+        name: '挑衅者',
+        title: '暴君的游戏',
+        shortDesc: '强制对决：白天挑战一名玩家，由众人裁决胜负，败者投票权变 0.5',
+        fullDesc: '在白天发言阶段指名挑战一名玩家，由其他玩家裁决胜负。胜方不变，败方下一次投票权变为 0.5 票。每局仅限一次，同一玩家不能被挑战两次。'
+    },
+    {
+        id: 'disruptor',
+        emoji: THEME_ICON_MAP.privilegeCard.disruptor,
+        name: '干扰者',
+        title: '白日操纵者',
+        shortDesc: '光天化日嘲讽：选定一名玩家公开嘲讽，对方次日投票权变 0.5',
+        fullDesc: '白天选定一名玩家，公开朗读一句嘲讽语。被嘲讽者次日投票权变为 0.5 票。每局仅限一次，无法连续两天嘲讽同一人。'
+    },
+    {
+        id: 'judge',
+        emoji: THEME_ICON_MAP.privilegeCard.judge,
+        name: '审判者',
+        title: '末日女王的审判',
+        shortDesc: '挑衅审判：被票出时发起审判，过关则反获窥视/真言奖励',
+        fullDesc: '当持有者在白天投票中得票最多即将出局时，可以发起一次"挑衅审判"：60 秒辩护、30 秒质询，然后所有玩家暗票表决她是否是狼人。多数判定"狼人"则她出局并公开身份；多数判定"好人"则她逃脱出局并获得「窥视」或「真言」奖励。'
+    }
+];
+
+const PRIVILEGE_TAUNTS = [
+    "你的推理能力，我用脚趾头都能想到更好的。",
+    "你活着，真是浪费空气。",
+    "你连狼人都看不出来，还好意思在这儿说话？"
+];
+
+// =====================================================
+// 惩罚选项 ── 在这里添加或修改！
+// female（女）和 male（男）各自一个数组，每行一条。
+// =====================================================
+const PUNISHMENTS = {
+    female: [
+        '打屁股',
+        '掐脖子',
+    ],
+    male: [
+        '喝酒一杯',
+        '喝酒3杯',
+    ],
+};
+
+// =====================================================
+// 游戏状态管理
+// =====================================================
+
+const gameState = {
+    playerCount: 0,
+    players: [],
+    roles: [],
+    selectedCards: [],
+    currentPhase: 'night', // night, discussion, vote, day, gameover
+    currentRound: 1,
+    gameLog: [],
+    alivePlayers: [],
+    deadPlayers: [],
+    pendingPenalties: [],         // [playerId] 次日生效的 0.5 票权
+    challengedTargets: [],        // [playerId] 已被挑衅者挑战过的玩家
+    mockedTargets: [],            // [playerId] 已被嘲讽过的玩家
+    privilegeHolderIds: [],       // 特权卡持有者的玩家ID数组（1或2人）
+    activeHolderId: null,         // 当前正在发动特权卡的玩家ID
+
+    goHome() {
+        voiceDirector.stop();
+        this.playerCount = 0;
+        this.players = [];
+        this.roles = [];
+        this.selectedCards = [];
+        this.currentPhase = 'night';
+        this.currentRound = 1;
+        this.gameLog = [];
+        this.alivePlayers = [];
+        this.deadPlayers = [];
+        this.pendingPenalties = [];
+        this.challengedTargets = [];
+        this.mockedTargets = [];
+        this.privilegeHolderIds = [];
+        this.activeHolderId = null;
+        showScreen('screen-home');
+    }
+};
+
+// =====================================================
+// 屏幕管理
+// =====================================================
+
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+// =====================================================
+// 模态框
+// =====================================================
+
+const modalUI = {
+    show(content) {
+        document.getElementById('modal-content').innerHTML = content;
+        document.getElementById('modal-overlay').classList.add('active');
+    },
+
+    hide() {
+        document.getElementById('modal-overlay').classList.remove('active');
+    }
+};
+
+// =====================================================
+// 语音主持
+// =====================================================
+
+const VOICE_HOST_STORAGE_KEY = 'wolf-kill-voice-host-v1';
+
+const HOST_SCRIPT = {
+    showcase({ holders }) {
+        if (!holders?.length) return ['本局没有特权卡。', '请继续进入角色分配。'];
+        if (holders.length === 1) {
+            return [
+                '本局特权卡已经公开。',
+                `${holders[0].name} 持有一张特权卡。`,
+                '请确认所有玩家都已看到，然后继续分配角色。'
+            ];
+        }
+        return [
+            '本局特权卡已经公开。',
+            `${holders.map(h => h.name).join('和')} 分别持有一张特权卡。`,
+            '请确认所有玩家都已看到，然后继续分配角色。'
+        ];
+    },
+    roleReveal({ player, index, total }) {
+        return [
+            `请把设备交给 ${player.name}。`,
+            '点击卡片查看你的身份。',
+            index === total - 1 ? '全部玩家查看完成后，可以开始游戏。' : '查看完毕后，请交给下一位玩家。'
+        ];
+    },
+    nightStart({ round }) {
+        return [
+            `第 ${round} 轮夜晚开始。`,
+            '狼人请私下讨论并决定击杀目标。',
+            '预言家查验一名玩家，医生选择是否守护。',
+            '完成后点击夜晚结束。'
+        ];
+    },
+    dawn({ killedPlayer, aliveCount }) {
+        if (killedPlayer) {
+            return [
+                '天亮了。',
+                `${killedPlayer.name} 在昨晚出局。`,
+                `当前还有 ${aliveCount} 名玩家存活。`,
+                '请开始白天讨论。'
+            ];
+        }
+        return [
+            '天亮了。',
+            '昨晚是平安夜，无人出局。',
+            `当前还有 ${aliveCount} 名玩家存活。`,
+            '请开始白天讨论。'
+        ];
+    },
+    discussionStart({ minutes }) {
+        return [
+            '白天讨论开始。',
+            `本轮讨论时间 ${minutes} 分钟。`,
+            '请所有玩家自由发言。'
+        ];
+    },
+    discussionWarning({ seconds }) {
+        return [`讨论时间还剩 ${seconds} 秒。`];
+    },
+    voteHandoff({ voter, current, total, judge, defendant }) {
+        return judge
+            ? [
+                `请把设备交给 ${voter.name}。`,
+                `请判定 ${defendant.name} 是否是狼人。`,
+                `当前是第 ${current} 位，共 ${total} 位。`
+            ]
+            : [
+                `请把设备交给 ${voter.name}。`,
+                '请准备投票。',
+                `当前是第 ${current} 位，共 ${total} 位。`
+            ];
+    },
+    voteBallot({ voter, judge, defendant }) {
+        return judge
+            ? [`${voter.name}，请选择你对 ${defendant.name} 的判决。`]
+            : [`${voter.name}，请选择你怀疑的玩家。`];
+    },
+    voteTally({ eliminated, tiedPlayers, canJudge }) {
+        return [
+            tiedPlayers?.length > 1 ? '本轮出现平票，系统已随机决定结果。' : '本轮投票结束。',
+            `${eliminated.name} 当前票数最高。`,
+            canJudge ? '如果持有审判者卡，现在可以发起末日审判。' : '请执行出局结果。'
+        ];
+    },
+    publicCard({ holderName, cardName, leadText }) {
+        return [
+            leadText || `${holderName} 正在发动特权卡。`,
+            `特权卡 ${cardName} 已公开。`,
+            '请全员确认后继续。'
+        ];
+    },
+    judgeDefense({ holderName }) {
+        return [
+            '末日审判开始。',
+            `${holderName} 进入辩护阶段。`,
+            '辩护时间两分钟。'
+        ];
+    },
+    judgeQuestion({ holderName }) {
+        return [
+            '进入质询阶段。',
+            `${holderName} 需要回答其他玩家的问题。`,
+            '质询时间三十秒。'
+        ];
+    },
+    judgeResult({ succeeded, defendantName }) {
+        return succeeded
+            ? ['审判成立。', `${defendantName} 被判定为狼人，立即出局。`]
+            : ['审判失败。', `${defendantName} 暂时存活，并获得额外奖励。`];
+    },
+    gameEnd({ winner }) {
+        return winner === 'HUMAN'
+            ? ['游戏结束。', '村民阵营胜利。', '现在可以执行败者惩罚，或者直接查看结果。']
+            : ['游戏结束。', '狼人阵营胜利。', '现在可以执行败者惩罚，或者直接查看结果。'];
+    }
+};
+
+const voiceDirector = {
+    supported: 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window,
+    enabled: false,
+    voices: [],
+    selectedVoiceURI: '',
+    rate: 0.95,
+    volume: 1,
+    pitch: 1,
+    queueToken: 0,
+    voiceListenerBound: false,
+
+    init() {
+        this.loadSettings();
+        this.bindVoiceEvents();
+        this.loadVoices();
+        this.refreshEntryButton();
+    },
+
+    bindVoiceEvents() {
+        if (!this.supported || this.voiceListenerBound) return;
+        const handler = () => {
+            this.loadVoices();
+            this.refreshSettingsModal();
+        };
+        if (typeof window.speechSynthesis.addEventListener === 'function') {
+            window.speechSynthesis.addEventListener('voiceschanged', handler);
+        } else {
+            window.speechSynthesis.onvoiceschanged = handler;
+        }
+        this.voiceListenerBound = true;
+    },
+
+    loadSettings() {
+        try {
+            const raw = localStorage.getItem(VOICE_HOST_STORAGE_KEY);
+            if (!raw) return;
+            const saved = JSON.parse(raw);
+            this.enabled = !!saved.enabled;
+            this.selectedVoiceURI = saved.selectedVoiceURI || '';
+            this.rate = Number(saved.rate) || this.rate;
+            this.volume = Number(saved.volume) || this.volume;
+            this.pitch = Number(saved.pitch) || this.pitch;
+        } catch (err) {
+            console.warn('voice settings load failed', err);
+        }
+    },
+
+    saveSettings() {
+        try {
+            localStorage.setItem(VOICE_HOST_STORAGE_KEY, JSON.stringify({
+                enabled: this.enabled,
+                selectedVoiceURI: this.selectedVoiceURI,
+                rate: this.rate,
+                volume: this.volume,
+                pitch: this.pitch
+            }));
+        } catch (err) {
+            console.warn('voice settings save failed', err);
+        }
+    },
+
+    loadVoices() {
+        if (!this.supported) return [];
+        const voices = window.speechSynthesis.getVoices() || [];
+        this.voices = voices;
+        if (!this.selectedVoiceURI) {
+            const preferred = this.pickPreferredVoice();
+            if (preferred) this.selectedVoiceURI = preferred.voiceURI;
+        } else if (!voices.some(v => v.voiceURI === this.selectedVoiceURI)) {
+            const preferred = this.pickPreferredVoice();
+            this.selectedVoiceURI = preferred?.voiceURI || '';
+        }
+        this.saveSettings();
+        return voices;
+    },
+
+    pickPreferredVoice() {
+        if (!this.voices.length) return null;
+        const zhVoices = this.voices.filter(v => (v.lang || '').toLowerCase().startsWith('zh'));
+        if (!zhVoices.length) return this.voices[0];
+        const named = zhVoices.find(v => /xiaoyi|xiaoxiao|tingting|mei-jia|sin-ji|ting-ting|yunxi/i.test(v.name));
+        return named || zhVoices[0];
+    },
+
+    getVoice() {
+        return this.voices.find(v => v.voiceURI === this.selectedVoiceURI) || this.pickPreferredVoice();
+    },
+
+    stop() {
+        this.queueToken++;
+        if (this.supported) window.speechSynthesis.cancel();
+    },
+
+    speakLines(lines, options = {}) {
+        if (!this.supported) return;
+        if (!this.enabled && !options.force) return;
+        const queue = (lines || []).map(line => `${line}`.trim()).filter(Boolean);
+        if (!queue.length) return;
+
+        const token = ++this.queueToken;
+        if (options.replace !== false) window.speechSynthesis.cancel();
+
+        const speakNext = index => {
+            if (token !== this.queueToken || index >= queue.length) return;
+            const utterance = new SpeechSynthesisUtterance(queue[index]);
+            const voice = this.getVoice();
+            if (voice) {
+                utterance.voice = voice;
+                utterance.lang = voice.lang || 'zh-CN';
+            } else {
+                utterance.lang = 'zh-CN';
+            }
+            utterance.rate = this.rate;
+            utterance.volume = this.volume;
+            utterance.pitch = this.pitch;
+            utterance.onend = () => speakNext(index + 1);
+            utterance.onerror = () => speakNext(index + 1);
+            window.speechSynthesis.speak(utterance);
+        };
+
+        speakNext(0);
+    },
+
+    announce(scene, data = {}, options = {}) {
+        const builder = HOST_SCRIPT[scene];
+        if (!builder) return;
+        this.speakLines(builder(data), options);
+    },
+
+    enableFromGesture() {
+        if (!this.supported) return;
+        this.enabled = true;
+        this.loadVoices();
+        this.saveSettings();
+        this.refreshEntryButton();
+        this.refreshSettingsModal();
+        this.speakLines(['语音主持已开启。', '接下来我会为你播报游戏流程。'], { force: true });
+    },
+
+    disable() {
+        this.enabled = false;
+        this.stop();
+        this.saveSettings();
+        this.refreshEntryButton();
+        this.refreshSettingsModal();
+    },
+
+    updateVoice(voiceURI) {
+        this.selectedVoiceURI = voiceURI;
+        this.saveSettings();
+    },
+
+    updateRate(value) {
+        this.rate = Number(value);
+        const rateLabel = document.getElementById('voice-rate-value');
+        if (rateLabel) rateLabel.textContent = this.rate.toFixed(2);
+        this.saveSettings();
+    },
+
+    updateVolume(value) {
+        this.volume = Number(value);
+        const volumeLabel = document.getElementById('voice-volume-value');
+        if (volumeLabel) volumeLabel.textContent = `${Math.round(this.volume * 100)}%`;
+        this.saveSettings();
+    },
+
+    preview() {
+        if (!this.supported) return;
+        this.speakLines(['语音主持试播。', '天黑请闭眼，白天请发言。'], { force: true });
+    },
+
+    getSettingsMarkup() {
+        const voiceOptions = this.voices.length
+            ? this.voices.map(voice => `
+                <option value="${voice.voiceURI}" ${voice.voiceURI === this.selectedVoiceURI ? 'selected' : ''}>
+                    ${(voice.name || '未命名语音')} · ${voice.lang || 'unknown'}
+                </option>
+            `).join('')
+            : '<option value="">正在加载语音列表…</option>';
+
+        return `
+            <div class="modal-title">🎙️ 语音主持</div>
+            <div class="modal-text">
+                ${this.supported
+                    ? (this.enabled ? '语音主持已开启。你可以在这里调整声音和语速。' : '开启后，系统会在关键阶段自动播报流程。')
+                    : '当前浏览器不支持语音合成，无法使用语音主持。'}
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">当前状态</div>
+                <div class="voice-setting-value">${this.supported ? (this.enabled ? '已开启' : '已关闭') : '浏览器不支持'}</div>
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">主持声音</div>
+                <select class="voice-select" onchange="voiceDirector.updateVoice(this.value)" ${!this.supported ? 'disabled' : ''}>
+                    ${voiceOptions}
+                </select>
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">语速 <span id="voice-rate-value">${this.rate.toFixed(2)}</span></div>
+                <input class="voice-range" type="range" min="0.75" max="1.25" step="0.05" value="${this.rate}" oninput="voiceDirector.updateRate(this.value)" ${!this.supported ? 'disabled' : ''}>
+            </div>
+            <div class="voice-setting-card">
+                <div class="voice-setting-label">音量 <span id="voice-volume-value">${Math.round(this.volume * 100)}%</span></div>
+                <input class="voice-range" type="range" min="0.2" max="1" step="0.05" value="${this.volume}" oninput="voiceDirector.updateVolume(this.value)" ${!this.supported ? 'disabled' : ''}>
+            </div>
+            <div class="modal-buttons">
+                ${this.enabled
+                    ? `<button class="btn btn-secondary btn-block" onclick="voiceDirector.preview()">试播主持语音</button>
+                       <button class="btn btn-ghost btn-block" onclick="voiceDirector.disable()">关闭语音主持</button>`
+                    : `<button class="btn btn-primary btn-block" onclick="voiceDirector.enableFromGesture()" ${!this.supported ? 'disabled' : ''}>开启语音主持</button>`}
+                <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">关闭</button>
+            </div>
+        `;
+    },
+
+    showSettingsModal() {
+        this.loadVoices();
+        modalUI.show(this.getSettingsMarkup());
+    },
+
+    refreshSettingsModal() {
+        const modal = document.getElementById('modal-overlay');
+        const title = document.querySelector('#modal-content .modal-title');
+        if (!modal?.classList.contains('active') || title?.textContent !== '🎙️ 语音主持') return;
+        modalUI.show(this.getSettingsMarkup());
+    },
+
+    refreshEntryButton() {
+        const entry = document.getElementById('voice-host-entry-btn');
+        if (entry) entry.textContent = `🎙️ 语音主持：${this.enabled ? '开启' : '关闭'}`;
+    }
+};
+
+// =====================================================
+// 设置屏幕
+// =====================================================
+
+const setupScreen = {
+    step: 0, // 0: 人数, 1: 名称, 2: 开始
+
+    init() {
+        this.step = 0;
+        document.getElementById('role-info-section').style.display = 'none';
+        document.getElementById('names-section').style.display = 'none';
+        document.getElementById('cards-section').style.display = 'none';
+        document.getElementById('btn-setup-next').style.display = 'none';
+        this.renderPlayerCount();
+        showScreen('screen-setup');
+    },
+
+    renderPlayerCount() {
+        const grid = document.getElementById('player-count-grid');
+        grid.innerHTML = '';
+        [5, 6, 7, 8, 9, 10].forEach(count => {
+            const btn = document.createElement('div');
+            btn.className = 'player-count-btn';
+            btn.innerHTML = `${count}<span>${['入门', '经典', '进阶', '完整', '大局', '史诗'][count-5]}</span>`;
+            btn.onclick = () => this.selectPlayerCount(count);
+            grid.appendChild(btn);
+        });
+    },
+
+    selectPlayerCount(count) {
+        gameState.playerCount = count;
+        
+        // 更新UI
+        document.querySelectorAll('.player-count-btn').forEach(btn => {
+            btn.classList.toggle('selected', parseInt(btn.textContent) === count);
+        });
+
+        // 显示角色信息
+        this.showRoleInfo();
+        this.step = 0;
+        this.nextStep();
+    },
+
+    showRoleInfo() {
+        const section = document.getElementById('role-info-section');
+        const info = document.getElementById('role-info');
+        
+        const roleConfig = {
+            5: [
+                { roleKey: 'wolf', count: 2 },
+                { roleKey: 'villager', count: 2 },
+                { roleKey: 'seer', count: 1 }
+            ],
+            6: [
+                { roleKey: 'wolf', count: 2 },
+                { roleKey: 'villager', count: 2 },
+                { roleKey: 'seer', count: 1 },
+                { roleKey: 'doctor', count: 1 }
+            ],
+            7: [
+                { roleKey: 'wolf', count: 2 },
+                { roleKey: 'villager', count: 3 },
+                { roleKey: 'seer', count: 1 },
+                { roleKey: 'doctor', count: 1 }
+            ],
+            8: [
+                { roleKey: 'wolf', count: 3 },
+                { roleKey: 'villager', count: 3 },
+                { roleKey: 'seer', count: 1 },
+                { roleKey: 'doctor', count: 1 }
+            ],
+            9: [
+                { roleKey: 'wolf', count: 3 },
+                { roleKey: 'villager', count: 4 },
+                { roleKey: 'seer', count: 1 },
+                { roleKey: 'doctor', count: 1 }
+            ],
+            10: [
+                { roleKey: 'wolf', count: 3 },
+                { roleKey: 'villager', count: 5 },
+                { roleKey: 'seer', count: 1 },
+                { roleKey: 'doctor', count: 1 }
+            ]
+        };
+
+        const roles = roleConfig[gameState.playerCount];
+        info.innerHTML = roles.map(role => `
+            <div class="role-item">
+                <div class="role-icon">${getRoleIcon(role.roleKey)}</div>
+                <div class="role-info">
+                    <div class="role-name">${ROLE_META[role.roleKey].name}</div>
+                    <div class="role-desc">${ROLE_META[role.roleKey].desc}</div>
+                </div>
+                <div style="font-size: 20px; font-weight: 700; color: var(--accent-green);">×${role.count}</div>
+            </div>
+        `).join('');
+
+        section.style.display = 'block';
+        gameState.roles = roles;
+    },
+
+    nextStep() {
+        this.step++;
+        const nextBtn = document.getElementById('btn-setup-next');
+
+        if (this.step === 1) {
+            // 显示名称输入
+            document.getElementById('names-section').style.display = 'block';
+            this.renderNameInputs();
+            nextBtn.style.display = 'block';
+            nextBtn.textContent = '查看本局特权卡 →';
+        } else if (this.step === 2) {
+            // 开始游戏
+            this.startGame();
+        }
+    },
+
+    renderNameInputs() {
+        const list = document.getElementById('names-input-list');
+        list.innerHTML = '';
+
+        // 最后 1 人（5-6人）或最后 2 人（7-10人）默认为女性
+        const femaleCount = gameState.playerCount >= 7 ? 2 : 1;
+
+        for (let i = 0; i < gameState.playerCount; i++) {
+            const isFemale = i >= gameState.playerCount - femaleCount;
+            const defaultGender = isFemale ? 'female' : 'male';
+            const defaultEmoji  = isFemale ? '👩' : '👨';
+            const row = document.createElement('div');
+            row.className = 'name-input-row';
+            row.innerHTML = `
+                <button class="gender-toggle" data-index="${i}" data-gender="${defaultGender}"
+                    onclick="this.dataset.gender=this.dataset.gender==='male'?'female':'male';this.textContent=this.dataset.gender==='female'?'👩':'👨'">${defaultEmoji}</button>
+                <input type="text" class="name-input" placeholder="输入玩家名称" data-index="${i}">
+            `;
+            list.appendChild(row);
+        }
+    },
+
+    renderCardSelection() {
+        const grid = document.getElementById('cards-grid');
+        grid.innerHTML = '';
+
+        PRIVILEGE_CARD_LIST.forEach(card => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card-option';
+            cardEl.dataset.cardId = card.id;
+            cardEl.onclick = () => this.toggleCard(card.id, cardEl);
+            cardEl.innerHTML = `
+                <div class="card-emoji">${card.emoji}</div>
+                <div class="card-name">${card.name}</div>
+                <div class="card-desc">${card.shortDesc}</div>
+            `;
+            grid.appendChild(cardEl);
+        });
+    },
+
+    toggleCard(cardId, element) {
+        element.classList.toggle('selected');
+        if (gameState.selectedCards.includes(cardId)) {
+            gameState.selectedCards = gameState.selectedCards.filter(id => id !== cardId);
+        } else {
+            gameState.selectedCards = [...gameState.selectedCards, cardId];
+        }
+    },
+
+    startGame() {
+        // 读取性别
+        const genderToggles = {};
+        document.querySelectorAll('.gender-toggle').forEach(btn => {
+            genderToggles[btn.dataset.index] = btn.dataset.gender;
+        });
+
+        gameState.players = [];
+        document.querySelectorAll('.name-input').forEach((input, index) => {
+            gameState.players.push({
+                id: index,
+                name: input.value || `玩家${index + 1}`,
+                role: null,
+                alive: true,
+                voteWeight: 1,
+                privilegeCards: [],
+                usedCards: [],
+                gender: genderToggles[String(index)] || 'male'
+            });
+        });
+
+        // 分配角色与特权卡
+        this.assignRoles();
+
+        // 展示本局特权卡（全屏），再进入角色查看
+        this.showCardShowcase();
+    },
+
+    showCardShowcase() {
+        const holders = (gameState.privilegeHolderIds || [])
+            .map(id => gameState.players.find(p => p.id === id))
+            .filter(Boolean);
+
+        const stage = document.getElementById('card-showcase-stage');
+
+        const cardHeroHtml = (holder, compact) => {
+            const card = PRIVILEGE_CARD_LIST.find(c => c.id === holder.privilegeCards[0]);
+            if (!card) return '';
+            const cls = compact ? 'priv-half' : 'priv-single';
+            return `
+                <div class="${cls}">
+                    <div class="priv-holder-label">✦ 特权持有者 ✦</div>
+                    <div class="priv-holder-name">${holder.name}</div>
+                    <div class="priv-hero-card">
+                        <div class="priv-hero-emoji">${card.emoji}</div>
+                        <div class="priv-hero-name">${card.name}</div>
+                        <div class="priv-hero-title">${card.title}</div>
+                        <div class="priv-hero-divider"></div>
+                        <div class="priv-hero-desc">${card.fullDesc}</div>
+                    </div>
+                </div>
+            `;
+        };
+
+        if (holders.length === 0) {
+            stage.innerHTML = `<div class="priv-single" style="color:var(--text-dim);font-size:18px;">本局无特权卡</div>`;
+        } else if (holders.length === 1) {
+            stage.innerHTML = cardHeroHtml(holders[0], false);
+        } else {
+            stage.innerHTML = `<div class="priv-dual">${holders.map(h => cardHeroHtml(h, true)).join('')}</div>`;
+        }
+
+        showScreen('screen-card-showcase');
+        voiceDirector.announce('showcase', { holders });
+    },
+
+    proceedToRoleReveal() {
+        showScreen('screen-role-reveal');
+        this.showRoleReveal();
+    },
+
+    assignRoles() {
+        const rolePool = {
+            5:  ['狼人', '狼人', '村民', '村民', '预言家'],
+            6:  ['狼人', '狼人', '村民', '村民', '预言家', '医生'],
+            7:  ['狼人', '狼人', '村民', '村民', '村民', '预言家', '医生'],
+            8:  ['狼人', '狼人', '狼人', '村民', '村民', '村民', '预言家', '医生'],
+            9:  ['狼人', '狼人', '狼人', '村民', '村民', '村民', '村民', '预言家', '医生'],
+            10: ['狼人', '狼人', '狼人', '村民', '村民', '村民', '村民', '村民', '预言家', '医生']
+        };
+        const roles = rolePool[gameState.playerCount];
+
+        // 打乱角色
+        for (let i = roles.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [roles[i], roles[j]] = [roles[j], roles[i]];
+        }
+
+        gameState.players.forEach((player, index) => {
+            player.role = roles[index];
+            player.privilegeCards = [];
+            player.usedCards = [];
+        });
+
+        // 7人及以上：最后2位玩家持卡；5-6人：最后1位持卡
+        const holderCount = gameState.playerCount >= 7 ? 2 : 1;
+        const holders = gameState.players.slice(-holderCount);
+
+        // 随机打乱全部特权卡，每人取1张（互不重复）
+        const allCardIds = PRIVILEGE_CARD_LIST.map(c => c.id);
+        for (let i = allCardIds.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allCardIds[i], allCardIds[j]] = [allCardIds[j], allCardIds[i]];
+        }
+        holders.forEach((holder, idx) => {
+            holder.privilegeCards = [allCardIds[idx]];
+        });
+
+        gameState.selectedCards = holders.map(h => h.privilegeCards[0]);
+        gameState.privilegeHolderIds = holders.map(h => h.id);
+        gameState.alivePlayers = [...gameState.players];
+    },
+
+    showRoleReveal() {
+        let currentIndex = 0;
+
+        const updateDisplay = () => {
+            const player = gameState.players[currentIndex];
+            document.getElementById('current-player-name').textContent = player.name;
+            voiceDirector.announce('roleReveal', {
+                player,
+                index: currentIndex,
+                total: gameState.players.length
+            });
+
+            const container = document.getElementById('role-card-display');
+            const hasPrivilege = (player.privilegeCards || []).length > 0;
+            container.innerHTML = `
+                <div style="
+                    width: 100%; height: 100%;
+                    border-radius: 20px;
+                    display: flex; flex-direction: column;
+                    align-items: center; justify-content: center;
+                    background: linear-gradient(160deg, #12122a, #1e1e46);
+                    border: 2px solid var(--border-color);
+                    cursor: pointer;
+                    padding: 24px;
+                    transition: all 0.3s;
+                " id="role-flip-card">
+                    <div id="card-content" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                        <div style="font-size:110px;line-height:1;">?</div>
+                        <div style="font-size:13px;color:var(--text-dim);letter-spacing:1px;">点击翻开</div>
+                    </div>
+                </div>
+            `;
+
+            let flipped = false;
+            const card = document.getElementById('role-flip-card');
+            card.onclick = () => {
+                flipped = !flipped;
+                const content = document.getElementById('card-content');
+                if (flipped) {
+                    let privilegeHtml = '';
+                    if (hasPrivilege) {
+                        privilegeHtml = player.privilegeCards.map(id => {
+                            const c = PRIVILEGE_CARD_LIST.find(x => x.id === id);
+                            return `
+                                <div style="margin-top:14px;padding:12px 16px;border-radius:14px;background:rgba(255,213,87,0.08);border:1px solid rgba(255,213,87,0.3);text-align:left;">
+                                    <div style="font-size:13px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">✦ 你的特权卡</div>
+                                    <div style="font-size:20px;font-weight:800;color:var(--accent-yellow);">${c.emoji} ${c.name}</div>
+                                    <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;line-height:1.5;">${c.fullDesc}</div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                    content.innerHTML = `
+                        <div style="font-size:150px;line-height:1;">${getRoleIcon(player.role)}</div>
+                        <div style="font-size:28px;font-weight:800;color:var(--accent-yellow);margin-top:12px;">${getRoleName(player.role)}</div>
+                        ${privilegeHtml}
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div style="font-size:110px;line-height:1;">?</div>
+                        <div style="font-size:13px;color:var(--text-dim);letter-spacing:1px;">点击翻开</div>
+                    `;
+                }
+            };
+
+            // 进度指示
+            const progressEl = document.getElementById('reveal-progress');
+            if (progressEl) {
+                progressEl.textContent = `${currentIndex + 1} / ${gameState.players.length}`;
+            }
+
+            // 左右两侧的翻页按钮
+            const prevSideBtn = document.getElementById('reveal-prev-btn');
+            const nextSideBtn = document.getElementById('reveal-next-btn');
+            if (currentIndex > 0) {
+                prevSideBtn.hidden = false;
+                prevSideBtn.onclick = () => {
+                    currentIndex--;
+                    updateDisplay();
+                };
+            } else {
+                prevSideBtn.hidden = true;
+                prevSideBtn.onclick = null;
+            }
+            if (currentIndex < gameState.players.length - 1) {
+                nextSideBtn.hidden = false;
+                nextSideBtn.onclick = () => {
+                    currentIndex++;
+                    updateDisplay();
+                };
+            } else {
+                nextSideBtn.hidden = true;
+                nextSideBtn.onclick = null;
+            }
+
+            // 底部仅在最后一人显示"开始游戏"
+            const nav = document.getElementById('reveal-nav');
+            nav.innerHTML = '';
+            if (currentIndex === gameState.players.length - 1) {
+                const startBtn = document.createElement('button');
+                startBtn.className = 'btn btn-primary btn-lg';
+                startBtn.style.width = '100%';
+                startBtn.textContent = '🎮 开始游戏';
+                startBtn.onclick = () => this.startGamePhase();
+                nav.appendChild(startBtn);
+            }
+        };
+
+        updateDisplay();
+    },
+
+    startGamePhase() {
+        showScreen('screen-game');
+        gameScreen.startNight();
+    }
+};
+
+// =====================================================
+// 游戏屏幕
+// =====================================================
+
+const gameScreen = {
+    currentAction: null,
+    discussionTimer: null,
+    nightKillTarget: null,
+    voteMap: {},
+    voterIndex: 0,
+    selectedVoteTarget: null,
+
+    startNight() {
+        gameState.currentPhase = 'night';
+        this.nightKillTarget = null;
+
+        const phaseEl = document.getElementById('game-phase-text');
+        if (phaseEl) phaseEl.textContent = `第 ${gameState.currentRound} 轮`;
+
+        const playerCards = gameState.alivePlayers.map(p => `
+            <div class="vote-candidate" id="night-card-${p.id}" onclick="gameScreen.selectNightKill(${p.id}, this)">
+                <div class="player-avatar">${playerAvatar(p)}</div>
+                <div class="player-name-label">${p.name}</div>
+                <div class="vote-check" style="color:var(--accent-red);">✕</div>
+            </div>
+        `).join('');
+
+        document.getElementById('game-content').innerHTML = `
+            <div>
+                <div style="text-align:center; margin-bottom: 20px;">
+                    <span class="phase-badge night">🌙 夜晚 · 狼人行动</span>
+                </div>
+                <div class="info-box">
+                    <div>${getRoleIcon('wolf')} 狼人：私下讨论，决定击杀目标</div>
+                    <div>${getRoleIcon('seer')} 预言家：闭眼查验一名玩家身份</div>
+                    <div>${getRoleIcon('doctor')} 医生：选择保护一名玩家</div>
+                </div>
+                <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 0.5px;">${getRoleIcon('wolf')} 狼人最终击杀了谁？</div>
+                ${playerCards}
+                <div style="margin-top: 8px;">
+                    <button class="btn btn-ghost btn-block" onclick="gameScreen.selectNightKill(null, null)">
+                        ✦ 无人死亡（医生守护）
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block" onclick="gameScreen.endNight()">
+                ✓ 夜晚结束
+            </button>
+        `;
+        voiceDirector.announce('nightStart', { round: gameState.currentRound });
+    },
+
+    selectNightKill(playerId, el) {
+        this.nightKillTarget = playerId;
+        document.querySelectorAll('[id^="night-card-"]').forEach(c => c.classList.remove('selected'));
+        if (el) el.classList.add('selected');
+    },
+
+    endNight() {
+        const killedPlayer = this.nightKillTarget !== null
+            ? gameState.alivePlayers.find(p => p.id === this.nightKillTarget)
+            : null;
+        if (killedPlayer) {
+            killedPlayer.alive = false;
+            gameState.alivePlayers = gameState.alivePlayers.filter(p => p.alive);
+        }
+        this.nightKillTarget = null;
+        this.showDawnAnnouncement(killedPlayer);
+    },
+
+    showDawnAnnouncement(killedPlayer) {
+        const phaseEl = document.getElementById('game-phase-text');
+        if (phaseEl) phaseEl.textContent = `第 ${gameState.currentRound} 轮`;
+
+        // 处理"次日生效"的投票权惩罚（来自干扰者卡）
+        if (gameState.pendingPenalties && gameState.pendingPenalties.length) {
+            gameState.pendingPenalties.forEach(pid => {
+                const p = gameState.players.find(pl => pl.id === pid);
+                if (p && p.alive) p.voteWeight = 0.5;
+            });
+            gameState.pendingPenalties = [];
+        }
+
+        // 不再统计并显示存活的狼人/村民人数，避免泄露昨晚阵营信息
+
+        const killedHtml = killedPlayer
+            ? `<div class="dawn-card killed">
+                    <div style="font-size:44px;margin-bottom:10px;">💀</div>
+                    <div style="font-size:22px;font-weight:800;color:var(--accent-red);">${killedPlayer.name}</div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">在昨晚去世了</div>
+               </div>`
+            : `<div class="dawn-card safe">
+                    <div style="font-size:44px;margin-bottom:10px;">🌟</div>
+                    <div style="font-size:20px;font-weight:800;color:var(--accent-green);">平安夜</div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">医生守护，无人死亡</div>
+               </div>`;
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="text-align:center;padding:20px 0;">
+                <span class="phase-badge day">☀️ 天亮了 · 第 ${gameState.currentRound} 轮</span>
+                ${killedHtml}
+                <div class="stat-row">
+                    <div class="stat-chip">存活 <strong>${gameState.alivePlayers.length}</strong> 人</div>
+                </div>
+                <div style="font-size:14px;color:var(--text-dim);">请开始发言，找出狼人</div>
+            </div>
+        `;
+
+        const privBtn = privilegeManager.renderEntryButton();
+        document.getElementById('game-bottom-bar').innerHTML = `
+            ${privBtn}
+            <button class="btn btn-primary btn-block" onclick="gameScreen.startDiscussion()">
+                💬 开始讨论
+            </button>
+        `;
+        voiceDirector.announce('dawn', {
+            killedPlayer,
+            aliveCount: gameState.alivePlayers.length
+        });
+    },
+
+    startDiscussion() {
+        gameState.currentPhase = 'discussion';
+        const phaseEl = document.getElementById('game-phase-text');
+        if (phaseEl) phaseEl.textContent = '白天讨论';
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;">
+                <span class="phase-badge day" style="margin-bottom:28px;">☀️ 白天讨论</span>
+                <div id="discussion-timer"
+                     style="font-size:96px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-3px;line-height:1;">
+                    ${gameState.playerCount}:00
+                </div>
+                <div style="font-size:14px;color:var(--text-dim);margin-top:16px;">所有玩家自由发言</div>
+            </div>
+        `;
+
+        const privBtn = privilegeManager.renderEntryButton();
+        document.getElementById('game-bottom-bar').innerHTML = `
+            ${privBtn}
+            <button class="btn btn-primary btn-block" onclick="gameScreen.startVote()">
+                🗳️ 开始投票
+            </button>
+        `;
+
+        if (this.discussionTimer) clearInterval(this.discussionTimer);
+        let time = gameState.playerCount * 60;
+        let warned30 = false;
+        let warned10 = false;
+        let warned5 = false;
+        voiceDirector.announce('discussionStart', { minutes: gameState.playerCount });
+        this.discussionTimer = setInterval(() => {
+            time--;
+            const min = Math.floor(time / 60);
+            const sec = time % 60;
+            const el = document.getElementById('discussion-timer');
+            if (!el) { clearInterval(this.discussionTimer); return; }
+            el.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+            if (time <= 30) el.style.color = 'var(--accent-orange)';
+            if (time <= 10) {
+                el.style.color = 'var(--accent-red)';
+                el.style.animation = 'timerPulse 0.5s ease-in-out infinite';
+            }
+            if (time <= 30 && !warned30) {
+                warned30 = true;
+                voiceDirector.announce('discussionWarning', { seconds: 30 });
+            }
+            if (time <= 10 && !warned10) {
+                warned10 = true;
+                voiceDirector.announce('discussionWarning', { seconds: 10 });
+            }
+            if (time <= 5 && !warned5) {
+                warned5 = true;
+                voiceDirector.announce('discussionWarning', { seconds: 5 });
+            }
+            if (time <= 0) { clearInterval(this.discussionTimer); this.discussionTimer = null; }
+        }, 1000);
+    },
+
+    startVote() {
+        if (this.discussionTimer) { clearInterval(this.discussionTimer); this.discussionTimer = null; }
+        gameState.currentPhase = 'vote';
+        this.voteMap = {};
+        this.voterIndex = 0;
+        this.showVoteHandoff();
+    },
+
+    showVoteHandoff() {
+        const voter = gameState.alivePlayers[this.voterIndex];
+        const total = gameState.alivePlayers.length;
+        const current = this.voterIndex + 1;
+
+        const phaseEl = document.getElementById('game-phase-text');
+        if (phaseEl) phaseEl.textContent = `投票 ${current}/${total}`;
+
+        const dots = gameState.alivePlayers.map((_, i) => {
+            const cls = i < this.voterIndex ? 'done' : i === this.voterIndex ? 'active' : '';
+            return `<div class="vote-dot ${cls}"></div>`;
+        }).join('');
+
+        document.getElementById('game-content').innerHTML = `
+            <div class="handoff-screen">
+                <div class="vote-progress-bar" style="width:100%;max-width:280px;">${dots}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;">投票轮次 ${current} / ${total}</div>
+                <div style="font-size:56px;margin-bottom:20px;">🤫</div>
+                <div style="font-size:18px;color:var(--text-secondary);margin-bottom:10px;">请将手机传给</div>
+                <div style="font-size:38px;font-weight:800;background:linear-gradient(135deg,var(--accent-green),var(--accent-lime));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;">${voter.name}</div>
+                <div style="font-size:13px;color:var(--text-dim);">其他玩家请勿偷看</div>
+            </div>
+        `;
+
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block btn-lg" onclick="gameScreen.showVoteBallot()">
+                我是 ${voter.name}，准备好了 →
+            </button>
+        `;
+        voiceDirector.announce('voteHandoff', {
+            voter,
+            current,
+            total,
+            judge: false
+        });
+    },
+
+    showVoteBallot() {
+        const voter = gameState.alivePlayers[this.voterIndex];
+        const candidates = gameState.alivePlayers.filter(p => p.id !== voter.id);
+        this.selectedVoteTarget = null;
+
+        const dots = gameState.alivePlayers.map((_, i) => {
+            const cls = i < this.voterIndex ? 'done' : i === this.voterIndex ? 'active' : '';
+            return `<div class="vote-dot ${cls}"></div>`;
+        }).join('');
+
+        const candidateHtml = candidates.map((p, i) => `
+            <div class="vote-candidate" id="vc-${p.id}"
+                 style="animation-delay:${i * 0.04}s"
+                 onclick="gameScreen.selectVoteTarget(${p.id})">
+                <div class="player-avatar">${playerAvatar(p)}</div>
+                <div class="player-name-label">${p.name}</div>
+                <div class="vote-check">✓</div>
+            </div>
+        `).join('');
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="padding-bottom:8px;">
+                <div class="vote-progress-bar">${dots}</div>
+                <div style="text-align:center;margin-bottom:16px;">
+                    <span class="phase-badge vote">🗳️ ${voter.name} 正在投票</span>
+                </div>
+                <div style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;text-align:center;">选择你认为是狼人的玩家</div>
+                ${candidateHtml}
+            </div>
+        `;
+
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block" id="confirm-vote-btn"
+                    style="opacity:0.35;pointer-events:none;"
+                    onclick="gameScreen.confirmVote()">
+                ✓ 确认投票
+            </button>
+        `;
+        voiceDirector.announce('voteBallot', { voter, judge: false });
+    },
+
+    selectVoteTarget(targetId) {
+        this.selectedVoteTarget = targetId;
+        document.querySelectorAll('[id^="vc-"]').forEach(el => el.classList.remove('selected'));
+        const el = document.getElementById(`vc-${targetId}`);
+        if (el) el.classList.add('selected');
+        const btn = document.getElementById('confirm-vote-btn');
+        if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+    },
+
+    confirmVote() {
+        if (this.selectedVoteTarget === null) return;
+        this.voteMap[gameState.alivePlayers[this.voterIndex].id] = this.selectedVoteTarget;
+        this.voterIndex++;
+        if (this.voterIndex >= gameState.alivePlayers.length) {
+            this.showVoteTally();
+        } else {
+            this.showVoteHandoff();
+        }
+    },
+
+    showVoteTally() {
+        const phaseEl = document.getElementById('game-phase-text');
+        if (phaseEl) phaseEl.textContent = '投票结果';
+
+        // 加权投票统计
+        const counts = {};
+        gameState.alivePlayers.forEach(p => { counts[p.id] = 0; });
+        Object.entries(this.voteMap).forEach(([voterId, targetId]) => {
+            const voter = gameState.players.find(p => p.id === parseInt(voterId, 10));
+            const w = voter ? (voter.voteWeight || 1) : 1;
+            if (counts[targetId] !== undefined) counts[targetId] += w;
+        });
+
+        const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0);
+        const sorted = [...gameState.alivePlayers].sort((a, b) => counts[b.id] - counts[a.id]);
+        const maxVotes = counts[sorted[0].id];
+        const tiedPlayers = sorted.filter(p => counts[p.id] === maxVotes);
+        const eliminated = tiedPlayers[Math.floor(Math.random() * tiedPlayers.length)];
+
+        // 缓存以供审判者使用
+        this.lastTallyEliminated = eliminated;
+
+        const fmt = v => Number.isInteger(v) ? `${v}` : v.toFixed(1);
+
+        const rowsHtml = sorted.map((p, idx) => {
+            const v = counts[p.id];
+            const pct = totalVotes > 0 ? Math.round(v / totalVotes * 100) : 0;
+            const isTop = v === maxVotes && v > 0;
+            const weightTag = (p.voteWeight || 1) !== 1
+                ? `<span style="display:inline-block;margin-left:6px;font-size:10px;padding:2px 6px;border-radius:6px;background:rgba(255,159,67,0.15);color:var(--accent-orange);">×${p.voteWeight}</span>`
+                : '';
+            return `
+                <div class="tally-row ${isTop ? 'top' : ''}" style="animation-delay:${idx * 0.07}s">
+                    <div class="player-avatar" style="${isTop ? 'border-color:var(--accent-red);' : ''}">${playerAvatar(p)}</div>
+                    <div style="flex:1">
+                        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${p.name}${weightTag}</div>
+                        <div class="tally-bar-wrap">
+                            <div class="tally-bar" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                    <div style="font-size:20px;font-weight:800;min-width:34px;text-align:right;${isTop ? 'color:var(--accent-red)' : 'color:var(--text-secondary)'}">${fmt(v)}</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="padding-bottom:8px;">
+                <div style="text-align:center;margin-bottom:20px;">
+                    <span class="phase-badge vote">🗳️ 投票结果</span>
+                </div>
+                ${rowsHtml}
+                ${tiedPlayers.length > 1
+                    ? `<div style="text-align:center;font-size:13px;color:var(--text-dim);margin-top:10px;">⚖️ 平票，随机决定</div>`
+                    : ''}
+            </div>
+        `;
+
+        // 如果即将出局者持有审判者卡且未使用，提供"发起审判"按钮
+        const judgeBtn = privilegeManager.renderJudgeButton(eliminated);
+        document.getElementById('game-bottom-bar').innerHTML = `
+            ${judgeBtn}
+            <button class="btn btn-red btn-block btn-lg" onclick="gameScreen.eliminateVoted(${eliminated.id})">
+                💀 消灭 ${eliminated.name}
+            </button>
+        `;
+        voiceDirector.announce('voteTally', {
+            eliminated,
+            tiedPlayers,
+            canJudge: privilegeManager.canUseJudge(eliminated)
+        });
+    },
+
+    eliminateVoted(playerId) {
+        const player = gameState.alivePlayers.find(p => p.id === playerId);
+        if (player) {
+            player.alive = false;
+            gameState.alivePlayers = gameState.alivePlayers.filter(p => p.alive);
+        }
+        // 投票完成后重置所有存活玩家的投票权
+        gameState.alivePlayers.forEach(p => { p.voteWeight = 1; });
+        this.checkGameEnd();
+    },
+
+    checkGameEnd() {
+        const wolves = gameState.alivePlayers.filter(p => p.role.includes('狼人'));
+        const humans = gameState.alivePlayers.filter(p => !p.role.includes('狼人'));
+
+        if (wolves.length === 0) {
+            this.endGame('HUMAN');
+        } else if (wolves.length >= humans.length) {
+            this.endGame('WOLF');
+        } else {
+            gameState.currentRound++;
+            this.startNight();
+        }
+    },
+
+    endGame(winner) {
+        if (this.discussionTimer) { clearInterval(this.discussionTimer); this.discussionTimer = null; }
+        showScreen('screen-game-over');
+        const isHuman = winner === 'HUMAN';
+        this._punishWinner = winner;
+        this._punishLosers = gameState.players.filter(p =>
+            isHuman ? p.role.includes('狼人') : !p.role.includes('狼人')
+        );
+
+        document.getElementById('game-over-content').innerHTML = `
+            <div style="text-align:center;padding:60px 24px 32px;width:100%;">
+                <div style="font-size:100px;margin-bottom:16px;animation:popIn 0.4s ease;">${isHuman ? '🎉' : '🐺'}</div>
+                <div style="font-size:42px;font-weight:800;margin-bottom:10px;background:linear-gradient(135deg,${isHuman ? 'var(--accent-green),var(--accent-lime)' : 'var(--accent-red),var(--accent-orange)'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                    ${isHuman ? '村民胜利' : '狼人胜利'}
+                </div>
+                <div style="font-size:15px;color:var(--text-secondary);margin-bottom:56px;">
+                    ${isHuman ? '所有狼人已被找出！' : '狼人成功占领了村庄…'}
+                </div>
+                <button class="btn btn-red btn-lg btn-block" onclick="gameScreen.showPunishmentFlow(0)">
+                    ⚡ 执行败者惩罚
+                </button>
+                <button class="btn btn-ghost btn-block" style="margin-top:12px;" onclick="gameScreen.showGameSummary()">
+                    跳过，查看结果
+                </button>
+            </div>
+        `;
+        voiceDirector.announce('gameEnd', { winner });
+    },
+
+    showPunishmentFlow(idx) {
+        const losers = this._punishLosers;
+        if (idx >= losers.length) { this.showGameSummary(); return; }
+        const player = losers[idx];
+        const gender = player.gender || 'male';
+        const genderEmoji = gender === 'female' ? '👩' : '👨';
+
+        document.getElementById('game-over-content').innerHTML = `
+            <div style="text-align:center;padding:44px 24px 32px;width:100%;">
+                <div style="font-size:13px;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">
+                    败者惩罚 ${idx + 1} / ${losers.length}
+                </div>
+                <div style="font-size:90px;line-height:1;margin-bottom:8px;animation:popIn 0.3s ease;">${genderEmoji}</div>
+                <div style="font-size:30px;font-weight:800;color:var(--text-primary);margin-bottom:4px;">${player.name}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:28px;">${getRoleDisplay(player.role)}</div>
+
+                <div class="punish-spin-box" id="punish-spin-box">？</div>
+
+                <button class="btn btn-red btn-lg btn-block" id="punish-draw-btn"
+                        onclick="gameScreen.runSpinAnimation('${gender}', ${idx})">
+                    🎰 抽取惩罚
+                </button>
+                <button class="btn btn-primary btn-block" id="punish-next-btn"
+                        style="display:none;margin-top:12px;"
+                        onclick="gameScreen.showPunishmentFlow(${idx + 1})">
+                    ${idx + 1 < losers.length ? '完成，下一个 →' : '完成，查看结果 →'}
+                </button>
+            </div>
+        `;
+    },
+
+    runSpinAnimation(gender, idx) {
+        const pool = PUNISHMENTS[gender] || PUNISHMENTS.male;
+        const final = pool[Math.floor(Math.random() * pool.length)];
+        const box = document.getElementById('punish-spin-box');
+        const drawBtn = document.getElementById('punish-draw-btn');
+        const nextBtn = document.getElementById('punish-next-btn');
+        if (!box) return;
+        drawBtn.style.display = 'none';
+        box.classList.add('spinning');
+
+        const startTime = Date.now();
+        const duration = 2400;
+
+        const tick = () => {
+            if (!document.getElementById('punish-spin-box')) return;
+            const elapsed = Date.now() - startTime;
+            if (elapsed < duration) {
+                box.textContent = pool[Math.floor(Math.random() * pool.length)];
+                const delay = 55 + (elapsed / duration) * 400;
+                setTimeout(tick, delay);
+            } else {
+                box.textContent = final;
+                box.classList.remove('spinning');
+                box.classList.add('revealed');
+                if (nextBtn) nextBtn.style.display = '';
+            }
+        };
+        setTimeout(tick, 55);
+    },
+
+    showGameSummary() {
+        const isHuman = this._punishWinner === 'HUMAN';
+        const playerList = gameState.players.map(p => {
+            const isWolf = p.role.includes('狼人');
+            const isAlive = p.alive;
+            return `
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin:4px 0;border-radius:var(--radius-sm);background:var(--bg-card);border:1px solid ${isWolf ? 'rgba(255,71,87,0.25)' : 'rgba(87,184,255,0.12)'};">
+                    <div style="font-size:30px;">${playerAvatar(p)}</div>
+                    <div style="flex:1;">
+                        <div style="font-size:14px;font-weight:600;${isAlive ? '' : 'text-decoration:line-through;color:var(--text-dim)'}">${p.name}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;">${getRoleDisplay(p.role)}</div>
+                    </div>
+                    <div style="font-size:11px;padding:2px 8px;border-radius:6px;background:${isAlive ? 'rgba(127,255,110,0.12)' : 'rgba(255,71,87,0.12)'};color:${isAlive ? 'var(--accent-green)' : 'var(--accent-red)'};">${isAlive ? '存活' : '出局'}</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('game-over-content').innerHTML = `
+            <div style="text-align:center;padding:36px 24px 32px;width:100%;">
+                <div style="font-size:14px;font-weight:700;color:var(--text-secondary);letter-spacing:1px;margin-bottom:10px;">本局角色</div>
+                <div style="text-align:left;margin-bottom:28px;">${playerList}</div>
+                <button class="btn btn-primary btn-lg btn-block" onclick="setupScreen.init()">再来一局 🎮</button>
+                <button class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="gameState.goHome()">返回首页</button>
+            </div>
+        `;
+    }
+};
+
+// =====================================================
+// 特权卡管理器
+// =====================================================
+
+const privilegeManager = {
+    judgeState: null,
+    pendingAnnouncementAction: null,
+
+    getAllHolders() {
+        return (gameState.privilegeHolderIds || [])
+            .map(id => gameState.players.find(p => p.id === id))
+            .filter(Boolean);
+    },
+
+    getHolder() {
+        if (gameState.activeHolderId == null) return null;
+        return gameState.players.find(p => p.id === gameState.activeHolderId) || null;
+    },
+
+    getCardData(id) {
+        return PRIVILEGE_CARD_LIST.find(c => c.id === id);
+    },
+
+    getAvailableDayCards() {
+        const holder = this.getHolder();
+        if (!holder || !holder.alive) return [];
+        // 审判者是被动卡，不在白天主动入口里
+        return holder.privilegeCards
+            .filter(id => id !== 'judge')
+            .filter(id => !holder.usedCards.includes(id));
+    },
+
+    canUseJudge(player) {
+        const holder = this.getAllHolders().find(h => h.id === player.id);
+        if (!holder) return false;
+        if (!holder.privilegeCards.includes('judge')) return false;
+        if (holder.usedCards.includes('judge')) return false;
+        return true;
+    },
+
+    renderEntryButton() {
+        const holders = this.getAllHolders().filter(h => h.alive);
+        const holdersWithCards = holders.filter(h =>
+            h.privilegeCards.some(id => id !== 'judge' && !h.usedCards.includes(id))
+        );
+        if (!holdersWithCards.length) return '';
+        if (holdersWithCards.length === 1) {
+            gameState.activeHolderId = holdersWithCards[0].id;
+            const cards = this.getAvailableDayCards();
+            return `
+                <button class="btn btn-secondary btn-block" style="margin-bottom:10px;border:1px solid var(--accent-yellow);color:var(--accent-yellow);"
+                    onclick="privilegeManager.showCardPicker()">
+                    ${THEME_ICON_MAP.privilegeCard.provoker} ${holdersWithCards[0].name} 使用特权卡（${cards.length}）
+                </button>
+            `;
+        }
+        const totalCards = holdersWithCards.reduce((sum, h) =>
+            sum + h.privilegeCards.filter(id => id !== 'judge' && !h.usedCards.includes(id)).length, 0);
+        return `
+            <button class="btn btn-secondary btn-block" style="margin-bottom:10px;border:1px solid var(--accent-yellow);color:var(--accent-yellow);"
+                onclick="privilegeManager.showHolderChooser()">
+                ${THEME_ICON_MAP.privilegeCard.provoker} 使用特权卡（${holdersWithCards.length}人 · ${totalCards}张可用）
+            </button>
+        `;
+    },
+
+    renderJudgeButton(eliminated) {
+        if (!this.canUseJudge(eliminated)) return '';
+        return `
+            <button class="btn btn-secondary btn-block" style="margin-bottom:10px;border:1px solid var(--accent-purple);color:var(--accent-purple);"
+                onclick="privilegeManager.announceJudgeFlow(${eliminated.id})">
+                ${THEME_ICON_MAP.privilegeCard.judge} ${eliminated.name} 发起末日审判
+            </button>
+        `;
+    },
+
+    showHolderChooser() {
+        const holders = this.getAllHolders().filter(h => h.alive);
+        const holdersWithCards = holders.filter(h =>
+            h.privilegeCards.some(id => id !== 'judge' && !h.usedCards.includes(id))
+        );
+        const holderHtml = holdersWithCards.map(h => {
+            const availCount = h.privilegeCards.filter(id => id !== 'judge' && !h.usedCards.includes(id)).length;
+            return `
+                <div class="vote-candidate" style="border-color:rgba(255,213,87,0.3);background:rgba(255,213,87,0.06);"
+                     onclick="privilegeManager.selectHolder(${h.id})">
+                    <div class="player-avatar">${playerAvatar(h)}</div>
+                    <div style="flex:1;">
+                        <div style="font-size:15px;font-weight:700;">${h.name}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${availCount} 张可用特权卡</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.provoker} 谁要使用特权卡？</div>
+            <div class="modal-text">选择要发动特权的玩家</div>
+            ${holderHtml}
+            <div class="modal-buttons" style="margin-top:14px;">
+                <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">取消</button>
+            </div>
+        `);
+    },
+
+    selectHolder(holderId) {
+        gameState.activeHolderId = holderId;
+        this.showCardPicker();
+    },
+
+    showPublicCardAnnouncement(cardId, leadText, nextAction) {
+        const card = this.getCardData(cardId);
+        if (!card) {
+            nextAction();
+            return;
+        }
+        this.pendingAnnouncementAction = nextAction;
+        modalUI.show(`
+            <div class="public-card-stage">
+                <div class="modal-title">✨ 特权卡发动</div>
+                <div class="modal-text">${leadText}</div>
+                <div class="showcase-card">
+                    <div class="showcase-head">
+                        <div class="showcase-icon">${card.emoji}</div>
+                        <div>
+                            <div class="showcase-name">${card.name}</div>
+                            <div class="showcase-title">${card.title}</div>
+                        </div>
+                    </div>
+                    <div class="showcase-desc">${card.fullDesc}</div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary btn-block" onclick="privilegeManager.confirmPublicCardAnnouncement()">
+                        全员已看到，继续 →
+                    </button>
+                </div>
+            </div>
+        `);
+        voiceDirector.announce('publicCard', {
+            holderName: this.getHolder()?.name || '持卡玩家',
+            cardName: card.name,
+            leadText
+        });
+    },
+
+    confirmPublicCardAnnouncement() {
+        const nextAction = this.pendingAnnouncementAction;
+        this.pendingAnnouncementAction = null;
+        modalUI.hide();
+        if (nextAction) nextAction();
+    },
+
+    showCardPicker() {
+        const cards = this.getAvailableDayCards();
+        if (!cards.length) { modalUI.hide(); return; }
+        const holder = this.getHolder();
+
+        const cardListHtml = cards.map(id => {
+            const c = this.getCardData(id);
+            return `
+                <div class="vote-candidate" style="border-color:rgba(255,213,87,0.3);background:rgba(255,213,87,0.06);"
+                     onclick="privilegeManager.useCard('${id}')">
+                    <div class="player-avatar" style="color:var(--accent-yellow);font-size:22px;">${c.emoji}</div>
+                    <div style="flex:1;">
+                        <div style="font-size:15px;font-weight:700;">${c.name}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;line-height:1.4;">${c.shortDesc}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.provoker} ${holder.name} 的特权卡</div>
+            <div class="modal-text">选择一张要使用的卡（不可撤销）</div>
+            ${cardListHtml}
+            <div class="modal-buttons" style="margin-top:14px;">
+                <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">取消</button>
+            </div>
+        `);
+    },
+
+    useCard(id) {
+        modalUI.hide();
+        this.showPublicCardAnnouncement(id, '本回合公开使用以下特权卡', () => {
+            if (id === 'provoker') this.runProvokerTargetPick();
+            else if (id === 'disruptor') this.runDisruptorTargetPick();
+        });
+    },
+
+    announceJudgeFlow(holderId) {
+        gameState.activeHolderId = holderId;
+        const holder = this.getHolder();
+        const leadText = `${holder?.name || '持卡玩家'} 发起末日审判`;
+        this.showPublicCardAnnouncement('judge', leadText, () => this.startJudgeFlow());
+    },
+
+    markCardUsed(id) {
+        const holder = this.getHolder();
+        if (holder && !holder.usedCards.includes(id)) {
+            holder.usedCards = [...holder.usedCards, id];
+        }
+    },
+
+    refreshCurrentPhaseEntry() {
+        // 重新渲染当前阶段的底栏（让按钮消失或更新计数）
+        if (gameState.currentPhase === 'discussion') {
+            // 重新写入底栏
+            const privBtn = this.renderEntryButton();
+            const bar = document.getElementById('game-bottom-bar');
+            if (bar) {
+                bar.innerHTML = `
+                    ${privBtn}
+                    <button class="btn btn-primary btn-block" onclick="gameScreen.startVote()">
+                        🗳️ 开始投票
+                    </button>
+                `;
+            }
+        } else {
+            // 默认刷新天亮态
+            const privBtn = this.renderEntryButton();
+            const bar = document.getElementById('game-bottom-bar');
+            if (bar) {
+                bar.innerHTML = `
+                    ${privBtn}
+                    <button class="btn btn-primary btn-block" onclick="gameScreen.startDiscussion()">
+                        💬 开始讨论
+                    </button>
+                `;
+            }
+        }
+    },
+
+    // ============== 卡牌1：挑衅者 ==============
+
+    runProvokerTargetPick() {
+        const holder = this.getHolder();
+        const candidates = gameState.alivePlayers.filter(p =>
+            p.id !== holder.id && !gameState.challengedTargets.includes(p.id)
+        );
+        if (!candidates.length) {
+            modalUI.show(`
+                <div class="modal-title">无可挑战目标</div>
+                <div class="modal-text">没有可被挑战的玩家</div>
+                <div class="modal-buttons"><button class="btn btn-primary btn-block" onclick="modalUI.hide()">知道了</button></div>
+            `);
+            return;
+        }
+
+        const listHtml = candidates.map(p => `
+            <div class="vote-candidate" onclick="privilegeManager.runProvokerDuel(${p.id})">
+                <div class="player-avatar">${playerAvatar(p)}</div>
+                <div class="player-name-label">${p.name}</div>
+            </div>
+        `).join('');
+
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.provoker} 挑衅者 · 强制对决</div>
+            <div class="modal-text">${this.getHolder().name} 选择挑战目标</div>
+            ${listHtml}
+            <div class="modal-buttons" style="margin-top:14px;">
+                <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">取消</button>
+            </div>
+        `);
+    },
+
+    runProvokerDuel(targetId) {
+        const target = gameState.players.find(p => p.id === targetId);
+        const holder = this.getHolder();
+
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.provoker} 强制对决</div>
+            <div style="text-align:center;font-size:15px;color:var(--text-secondary);margin-bottom:18px;line-height:1.7;">
+                <strong style="color:var(--accent-yellow)">${holder.name}</strong> 挑战
+                <strong style="color:var(--accent-red)">${target.name}</strong><br>
+                由其他玩家共同裁决谁获胜
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary btn-block" onclick="privilegeManager.resolveProvoker(${targetId}, 'holder')">
+                    ${holder.name} 获胜
+                </button>
+                <button class="btn btn-secondary btn-block" onclick="privilegeManager.resolveProvoker(${targetId}, 'target')">
+                    ${target.name} 获胜
+                </button>
+                <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">取消</button>
+            </div>
+        `);
+    },
+
+    resolveProvoker(targetId, winner) {
+        const target = gameState.players.find(p => p.id === targetId);
+        const holder = this.getHolder();
+        const loser = winner === 'holder' ? target : holder;
+        loser.voteWeight = 0.5;
+
+        gameState.challengedTargets = [...gameState.challengedTargets, targetId];
+        this.markCardUsed('provoker');
+
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.provoker} 对决结果</div>
+            <div class="dawn-card killed" style="margin:12px auto;">
+                <div style="font-size:38px;margin-bottom:8px;">${winner === 'holder' ? '👑' : '🛡️'}</div>
+                <div style="font-size:18px;font-weight:800;">${winner === 'holder' ? holder.name : target.name} 获胜</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">
+                    ${loser.name} 的投票权变为 <strong style="color:var(--accent-orange)">0.5 票</strong>（直到本轮投票后重置）
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary btn-block" onclick="modalUI.hide(); privilegeManager.refreshCurrentPhaseEntry();">确认</button>
+            </div>
+        `);
+    },
+
+    // ============== 卡牌2：干扰者 ==============
+
+    runDisruptorTargetPick() {
+        const holder = this.getHolder();
+        const candidates = gameState.alivePlayers.filter(p =>
+            p.id !== holder.id && !gameState.mockedTargets.includes(p.id)
+        );
+        if (!candidates.length) {
+            modalUI.show(`
+                <div class="modal-title">无可嘲讽目标</div>
+                <div class="modal-text">没有可被嘲讽的玩家</div>
+                <div class="modal-buttons"><button class="btn btn-primary btn-block" onclick="modalUI.hide()">知道了</button></div>
+            `);
+            return;
+        }
+
+        const listHtml = candidates.map(p => `
+            <div class="vote-candidate" onclick="privilegeManager.runDisruptorPhrasePick(${p.id})">
+                <div class="player-avatar">${playerAvatar(p)}</div>
+                <div class="player-name-label">${p.name}</div>
+            </div>
+        `).join('');
+
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.disruptor} 干扰者 · 嘲讽</div>
+            <div class="modal-text">${this.getHolder().name} 选择嘲讽对象</div>
+            ${listHtml}
+            <div class="modal-buttons" style="margin-top:14px;">
+                <button class="btn btn-ghost btn-block" onclick="modalUI.hide()">取消</button>
+            </div>
+        `);
+    },
+
+    runDisruptorPhrasePick(targetId) {
+        const target = gameState.players.find(p => p.id === targetId);
+        const phrasesHtml = PRIVILEGE_TAUNTS.map((phrase, i) => `
+            <div class="vote-candidate" style="display:block;" onclick="privilegeManager.runDisruptorAnnounce(${targetId}, ${i})">
+                <div style="font-size:13px;color:var(--text-dim);margin-bottom:4px;">嘲讽语 ${i + 1}</div>
+                <div style="font-size:14px;line-height:1.5;">"${phrase}"</div>
+            </div>
+        `).join('');
+
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.disruptor} 选择嘲讽语</div>
+            <div class="modal-text">公开宣读给 ${target.name}</div>
+            ${phrasesHtml}
+            <div class="modal-buttons" style="margin-top:14px;">
+                <button class="btn btn-ghost btn-block" onclick="privilegeManager.runDisruptorTargetPick()">← 返回</button>
+            </div>
+        `);
+    },
+
+    runDisruptorAnnounce(targetId, phraseIdx) {
+        const target = gameState.players.find(p => p.id === targetId);
+        const phrase = PRIVILEGE_TAUNTS[phraseIdx];
+        const holder = this.getHolder();
+
+        gameState.mockedTargets = [...gameState.mockedTargets, targetId];
+        gameState.pendingPenalties = [...gameState.pendingPenalties, targetId];
+        this.markCardUsed('disruptor');
+
+        modalUI.show(`
+            <div class="modal-title">${THEME_ICON_MAP.privilegeCard.disruptor} 公开嘲讽</div>
+            <div style="text-align:center;font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+                <strong style="color:var(--accent-yellow)">${holder.name}</strong> 当众宣布：
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--accent-yellow);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+                <div style="font-size:13px;color:var(--text-dim);margin-bottom:6px;">致 ${target.name}：</div>
+                <div style="font-size:16px;font-weight:600;line-height:1.6;">"${phrase}"</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:14px;">
+                ${target.name} 的投票权将在<strong style="color:var(--accent-orange)">次日</strong>变为 0.5 票
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary btn-block" onclick="modalUI.hide(); privilegeManager.refreshCurrentPhaseEntry();">确认</button>
+            </div>
+        `);
+    },
+
+    // ============== 卡牌3：审判者 ==============
+
+    startJudgeFlow() {
+        modalUI.hide();
+        this.markCardUsed('judge');
+        this.judgeState = {
+            defendant: gameScreen.lastTallyEliminated,
+            phase: 'defense',
+            voteMap: {},
+            voterIndex: 0,
+            selectedTarget: null
+        };
+        this.showJudgeDefense();
+    },
+
+    showJudgeDefense() {
+        const holder = this.getHolder();
+        const phaseEl = document.getElementById('game-phase-text');
+        if (phaseEl) phaseEl.textContent = '末日审判';
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;">
+                <span class="phase-badge vote" style="background:rgba(180,87,255,0.25);color:#c084fc;border-color:rgba(192,132,252,0.4);">${THEME_ICON_MAP.privilegeCard.judge} 末日审判 · 辩护</span>
+                <div style="margin-top:20px;font-size:18px;color:var(--text-secondary);">${holder.name} 的辩护时间</div>
+                <div id="judge-timer" style="font-size:96px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-3px;line-height:1;margin-top:14px;">2:00</div>
+                <div style="font-size:13px;color:var(--text-dim);margin-top:14px;">为自己辩护，证明你不是狼人</div>
+            </div>
+        `;
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block" onclick="privilegeManager.showJudgeQuestion()">
+                → 进入质询
+            </button>
+        `;
+
+        if (this.judgeTimer) clearInterval(this.judgeTimer);
+        let t = 120;
+        this.judgeTimer = setInterval(() => {
+            t--;
+            const el = document.getElementById('judge-timer');
+            if (!el) { clearInterval(this.judgeTimer); return; }
+            const m = Math.floor(t / 60), s = t % 60;
+            el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            if (t <= 10) el.style.color = 'var(--accent-red)';
+            if (t <= 0) { clearInterval(this.judgeTimer); this.judgeTimer = null; }
+        }, 1000);
+        voiceDirector.announce('judgeDefense', { holderName: holder.name });
+    },
+
+    showJudgeQuestion() {
+        if (this.judgeTimer) { clearInterval(this.judgeTimer); this.judgeTimer = null; }
+        const holder = this.getHolder();
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;">
+                <span class="phase-badge vote" style="background:rgba(180,87,255,0.25);color:#c084fc;border-color:rgba(192,132,252,0.4);">${THEME_ICON_MAP.privilegeCard.judge} 末日审判 · 质询</span>
+                <div style="margin-top:20px;font-size:18px;color:var(--text-secondary);">其他玩家提出质疑</div>
+                <div id="judge-timer" style="font-size:96px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-3px;line-height:1;margin-top:14px;">0:30</div>
+                <div style="font-size:13px;color:var(--text-dim);margin-top:14px;">${holder.name} 必须如实回答</div>
+            </div>
+        `;
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block" onclick="privilegeManager.startJudgeVote()">
+                → 进入投票
+            </button>
+        `;
+
+        if (this.judgeTimer) clearInterval(this.judgeTimer);
+        let t = 30;
+        this.judgeTimer = setInterval(() => {
+            t--;
+            const el = document.getElementById('judge-timer');
+            if (!el) { clearInterval(this.judgeTimer); return; }
+            const m = Math.floor(t / 60), s = t % 60;
+            el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            if (t <= 10) el.style.color = 'var(--accent-red)';
+            if (t <= 0) { clearInterval(this.judgeTimer); this.judgeTimer = null; }
+        }, 1000);
+        voiceDirector.announce('judgeQuestion', { holderName: holder.name });
+    },
+
+    startJudgeVote() {
+        if (this.judgeTimer) { clearInterval(this.judgeTimer); this.judgeTimer = null; }
+        this.judgeState.voteMap = {};
+        this.judgeState.voterIndex = 0;
+        this.showJudgeVoteHandoff();
+    },
+
+    showJudgeVoteHandoff() {
+        const voter = gameState.alivePlayers[this.judgeState.voterIndex];
+        const total = gameState.alivePlayers.length;
+        const current = this.judgeState.voterIndex + 1;
+
+        const dots = gameState.alivePlayers.map((_, i) => {
+            const cls = i < this.judgeState.voterIndex ? 'done' : i === this.judgeState.voterIndex ? 'active' : '';
+            return `<div class="vote-dot ${cls}"></div>`;
+        }).join('');
+
+        document.getElementById('game-content').innerHTML = `
+            <div class="handoff-screen">
+                <div class="vote-progress-bar" style="width:100%;max-width:280px;">${dots}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;">审判投票 ${current} / ${total}</div>
+                <div style="font-size:56px;margin-bottom:18px;">⚖️</div>
+                <div style="font-size:18px;color:var(--text-secondary);margin-bottom:8px;">请将手机传给</div>
+                <div style="font-size:38px;font-weight:800;background:linear-gradient(135deg,#c084fc,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:18px;">${voter.name}</div>
+                <div style="font-size:13px;color:var(--text-dim);">判定 ${this.judgeState.defendant.name} 是否是狼人</div>
+            </div>
+        `;
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block btn-lg" onclick="privilegeManager.showJudgeVoteBallot()">
+                我是 ${voter.name}，准备好了 →
+            </button>
+        `;
+        voiceDirector.announce('voteHandoff', {
+            voter,
+            current,
+            total,
+            judge: true,
+            defendant: this.judgeState.defendant
+        });
+    },
+
+    showJudgeVoteBallot() {
+        const voter = gameState.alivePlayers[this.judgeState.voterIndex];
+        this.judgeState.selectedTarget = null;
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="padding:20px 0;">
+                <div style="text-align:center;margin-bottom:24px;">
+                    <span class="phase-badge vote" style="background:rgba(180,87,255,0.25);color:#c084fc;border-color:rgba(192,132,252,0.4);">⚖️ ${voter.name} 的判决</span>
+                </div>
+                <div style="font-size:14px;color:var(--text-secondary);text-align:center;margin-bottom:20px;">
+                    你认为 <strong style="color:var(--accent-yellow)">${this.judgeState.defendant.name}</strong> 是…
+                </div>
+                <div class="vote-candidate" id="judge-vote-wolf" style="border-color:rgba(255,71,87,0.3);" onclick="privilegeManager.selectJudgeVote('wolf')">
+                    <div class="player-avatar" style="color:var(--accent-red);">${getRoleIcon('wolf')}</div>
+                    <div class="player-name-label">是狼人 — 应该出局</div>
+                    <div class="vote-check">✓</div>
+                </div>
+                <div class="vote-candidate" id="judge-vote-good" style="border-color:rgba(127,255,110,0.3);" onclick="privilegeManager.selectJudgeVote('good')">
+                    <div class="player-avatar" style="color:var(--accent-green);">${getRoleIcon('villager')}</div>
+                    <div class="player-name-label">是好人 — 是队友</div>
+                    <div class="vote-check">✓</div>
+                </div>
+            </div>
+        `;
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block" id="confirm-judge-btn"
+                    style="opacity:0.35;pointer-events:none;"
+                    onclick="privilegeManager.confirmJudgeVote()">
+                ✓ 确认投票
+            </button>
+        `;
+        voiceDirector.announce('voteBallot', {
+            voter,
+            judge: true,
+            defendant: this.judgeState.defendant
+        });
+    },
+
+    selectJudgeVote(choice) {
+        this.judgeState.selectedTarget = choice;
+        document.getElementById('judge-vote-wolf').classList.toggle('selected', choice === 'wolf');
+        document.getElementById('judge-vote-good').classList.toggle('selected', choice === 'good');
+        const btn = document.getElementById('confirm-judge-btn');
+        if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+    },
+
+    confirmJudgeVote() {
+        if (!this.judgeState.selectedTarget) return;
+        const voterId = gameState.alivePlayers[this.judgeState.voterIndex].id;
+        this.judgeState.voteMap[voterId] = this.judgeState.selectedTarget;
+        this.judgeState.voterIndex++;
+        if (this.judgeState.voterIndex >= gameState.alivePlayers.length) {
+            this.showJudgeResult();
+        } else {
+            this.showJudgeVoteHandoff();
+        }
+    },
+
+    showJudgeResult() {
+        const votes = Object.values(this.judgeState.voteMap);
+        const wolfVotes = votes.filter(v => v === 'wolf').length;
+        const goodVotes = votes.filter(v => v === 'good').length;
+        const total = votes.length;
+        const threshold = Math.floor(total / 2) + 1;
+        const judgmentSucceeded = wolfVotes >= threshold; // 多数判她是狼人 → 审判成功，她出局
+        const defendant = this.judgeState.defendant;
+
+        document.getElementById('game-content').innerHTML = `
+            <div style="padding:20px 0;text-align:center;">
+                <span class="phase-badge vote" style="background:rgba(180,87,255,0.25);color:#c084fc;border-color:rgba(192,132,252,0.4);">⚖️ 审判结果</span>
+                <div style="display:flex;gap:12px;justify-content:center;margin:24px 0;">
+                    <div style="flex:1;max-width:140px;padding:18px;border-radius:var(--radius);background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.3);">
+                        <div style="font-size:28px;">${getRoleIcon('wolf')}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">是狼人</div>
+                        <div style="font-size:32px;font-weight:800;color:var(--accent-red);margin-top:4px;">${wolfVotes}</div>
+                    </div>
+                    <div style="flex:1;max-width:140px;padding:18px;border-radius:var(--radius);background:rgba(127,255,110,0.06);border:1px solid rgba(127,255,110,0.3);">
+                        <div style="font-size:28px;">${getRoleIcon('villager')}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">是好人</div>
+                        <div style="font-size:32px;font-weight:800;color:var(--accent-green);margin-top:4px;">${goodVotes}</div>
+                    </div>
+                </div>
+                <div class="dawn-card ${judgmentSucceeded ? 'killed' : 'safe'}">
+                    <div style="font-size:38px;">${judgmentSucceeded ? '💀' : '✨'}</div>
+                    <div style="font-size:18px;font-weight:800;margin-top:6px;color:${judgmentSucceeded ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                        ${judgmentSucceeded ? '审判成立' : '审判失败'}
+                    </div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.6;">
+                        ${judgmentSucceeded
+                            ? `${defendant.name} 公开身份卡：<strong style="color:var(--text-primary)">${getRoleDisplay(defendant.role)}</strong>，并执行出局`
+                            : `${defendant.name} 逃脱出局，并获得「逃脱快感」奖励`}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (judgmentSucceeded) {
+            document.getElementById('game-bottom-bar').innerHTML = `
+                <button class="btn btn-red btn-block btn-lg" onclick="privilegeManager.finishJudgeAndEliminate()">
+                    💀 ${defendant.name} 出局
+                </button>
+            `;
+        } else {
+            document.getElementById('game-bottom-bar').innerHTML = `
+                <button class="btn btn-primary btn-block" onclick="privilegeManager.showJudgeReward()">
+                    ✨ 选择逃脱快感奖励
+                </button>
+            `;
+        }
+        voiceDirector.announce('judgeResult', {
+            succeeded: judgmentSucceeded,
+            defendantName: defendant.name
+        });
+    },
+
+    finishJudgeAndEliminate() {
+        const defendant = this.judgeState.defendant;
+        this.judgeState = null;
+        gameScreen.eliminateVoted(defendant.id);
+    },
+
+    showJudgeReward() {
+        modalUI.show(`
+            <div class="modal-title">✨ 逃脱快感</div>
+            <div class="modal-text">选择一项额外特权</div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary btn-block" onclick="modalUI.hide(); privilegeManager.runPeekTargetPick()">
+                    👁️ 窥视权 — 秘密查看一名玩家身份
+                </button>
+                <button class="btn btn-primary btn-block" onclick="modalUI.hide(); privilegeManager.runTruthTargetPick()">
+                    🗣️ 真言术 — 强制一名玩家如实回答
+                </button>
+            </div>
+        `);
+    },
+
+    runPeekTargetPick() {
+        const holder = this.getHolder();
+        const candidates = gameState.alivePlayers.filter(p => p.id !== holder.id);
+        const listHtml = candidates.map(p => `
+            <div class="vote-candidate" onclick="privilegeManager.runPeekReveal(${p.id})">
+                <div class="player-avatar">${playerAvatar(p)}</div>
+                <div class="player-name-label">${p.name}</div>
+            </div>
+        `).join('');
+
+        modalUI.show(`
+            <div class="modal-title">👁️ 窥视权</div>
+            <div class="modal-text">选择要查看身份的玩家</div>
+            ${listHtml}
+        `);
+    },
+
+    runPeekReveal(targetId) {
+        const target = gameState.players.find(p => p.id === targetId);
+        modalUI.show(`
+            <div class="modal-title">👁️ 秘密身份</div>
+            <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">${target.name} 的身份是</div>
+                <div style="font-size:48px;font-weight:800;color:var(--accent-yellow);">${getRoleDisplay(target.role)}</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:14px;">${target.name} 不会知道自己被查看过</div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary btn-block" onclick="modalUI.hide(); privilegeManager.finishJudgeEscape();">确认</button>
+            </div>
+        `);
+    },
+
+    runTruthTargetPick() {
+        const holder = this.getHolder();
+        const candidates = gameState.alivePlayers.filter(p => p.id !== holder.id);
+        const listHtml = candidates.map(p => `
+            <div class="vote-candidate" onclick="privilegeManager.runTruthAsk(${p.id})">
+                <div class="player-avatar">${playerAvatar(p)}</div>
+                <div class="player-name-label">${p.name}</div>
+            </div>
+        `).join('');
+
+        modalUI.show(`
+            <div class="modal-title">🗣️ 真言术</div>
+            <div class="modal-text">选择要审问的玩家</div>
+            ${listHtml}
+        `);
+    },
+
+    runTruthAsk(targetId) {
+        const target = gameState.players.find(p => p.id === targetId);
+        modalUI.show(`
+            <div class="modal-title">🗣️ 真言术</div>
+            <div style="text-align:center;padding:14px 0;">
+                <div style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">请向 <strong style="color:var(--accent-yellow)">${target.name}</strong> 提出一个问题</div>
+                <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">
+                    示例：<br>
+                    "你是狼人吗？"<br>
+                    "你认为谁是狼人？"<br>
+                    "你是不是预言家？"
+                </div>
+                <div style="margin-top:14px;padding:12px;border-radius:var(--radius-sm);background:rgba(255,213,87,0.08);border:1px solid rgba(255,213,87,0.3);font-size:12px;color:var(--accent-yellow);">
+                    ${target.name} 必须如实回答
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary btn-block" onclick="modalUI.hide(); privilegeManager.finishJudgeEscape();">已回答，继续</button>
+            </div>
+        `);
+    },
+
+    finishJudgeEscape() {
+        // 逃脱后，被告幸存，重置投票权，进入下一轮夜晚
+        this.judgeState = null;
+        gameState.alivePlayers.forEach(p => { p.voteWeight = 1; });
+        gameState.currentRound++;
+        gameScreen.startNight();
+    }
+};
+
+// =====================================================
+// 模态框 - 规则
+// =====================================================
+
+function showRulesModal() {
+    const content = `
+        <div class="modal-title">🎮 游戏规则</div>
+        <div class="modal-text" style="text-align: left; font-size: 14px;">
+            <div style="margin-bottom: 12px;"><strong>基本目标：</strong></div>
+            <div style="margin-bottom: 16px;">村民阵营：发现并消灭所有狼人</div>
+            <div style="margin-bottom: 16px;">狼人阵营：消灭所有村民</div>
+            
+            <div style="margin-bottom: 12px;"><strong>基本流程：</strong></div>
+            <div style="margin-bottom: 8px;">1. 🌙 夜晚：狼人私下讨论，消灭一个村民</div>
+            <div style="margin-bottom: 8px;">2. ☀️ 白天：所有玩家讨论并投票</div>
+            <div style="margin-bottom: 16px;">3. 重复直到游戏结束</div>
+            
+            <div style="margin-bottom: 12px;"><strong>特殊角色：</strong></div>
+            <div style="margin-bottom: 6px;">${getRoleIcon('seer')} 预言家：每晚查看一个玩家的身份</div>
+            <div style="margin-bottom: 6px;">${getRoleIcon('doctor')} 医生：每晚保护一个玩家</div>
+            <div style="margin-bottom: 16px;">${getRoleIcon('wolf')} 狼人：每晚消灭一个村民</div>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn btn-primary btn-block" onclick="modalUI.hide()">知道了</button>
+        </div>
+    `;
+    modalUI.show(content);
+}
+
+// =====================================================
+// 初始化 & iOS Safari 触摸修复
+// =====================================================
+
+// 捕获 JS 错误并显示在页面上，方便诊断
+window.onerror = function(msg, src, line) {
+    var banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;background:#ff4757;color:#fff;padding:10px 14px;z-index:99999;border-radius:10px;font-size:12px;word-break:break-all;';
+    banner.textContent = 'JS错误 (行' + line + '): ' + msg;
+    document.body.appendChild(banner);
+};
+
+// JS 加载成功时，更新首页副标题，让用户知道 JS 正常运行
+document.addEventListener('DOMContentLoaded', function() {
+    voiceDirector.init();
+    var sub = document.querySelector('.home-subtitle');
+    if (sub) sub.innerHTML = '特权卡版 <span style="font-size:13px;color:#7fff6e;">✓ v7</span>';
+});
+
+// iOS Safari 可靠触摸方案：
+// 用事件委托将 touchend 转换为 click，绕过 iOS 的 300ms 延迟及部分
+// 因 position:fixed 层导致合成 click 事件丢失的问题。
+document.getElementById('app-root').addEventListener('touchend', function(e) {
+    var target = e.target.closest(
+        'button, .player-count-btn, .vote-candidate, .card-option, ' +
+        '.gender-toggle, .header-back, [onclick]'
+    );
+    if (!target) return;
+    // 阻止浏览器再合成一次 click（防止双触发）
+    e.preventDefault();
+    // 手动派发 click 事件
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+}, { passive: false });
+</script>
+
+</div><!-- /#app-root -->
+</body>
+</html>
