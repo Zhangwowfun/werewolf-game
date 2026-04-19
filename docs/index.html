@@ -153,6 +153,16 @@ body {
         <div class="home-container">
             <div class="home-title">狼人杀</div>
             <div class="home-subtitle">v4.2 · 石像鬼版</div>
+            <div class="card" style="width:100%;max-width:300px;margin-bottom:20px;padding:16px;">
+                <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;text-align:center;">选择人数</div>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-secondary btn-sm" id="btn-5p" onclick="selectPlayerCount(5)" style="flex:1;">5人局</button>
+                    <button class="btn btn-ghost btn-sm" id="btn-6p" onclick="selectPlayerCount(6)" style="flex:1;">6人局</button>
+                </div>
+                <div id="selected-mode-desc" style="font-size:12px;color:var(--text-secondary);margin-top:10px;text-align:center;">
+                    2狼 vs 3好人 · 女巫不能自救
+                </div>
+            </div>
             <div class="home-buttons">
                 <button class="btn btn-primary btn-lg" onclick="showScreen('screen-setup')">🎮 开始游戏</button>
                 <button class="btn btn-secondary" onclick="showRules()">📖 规则说明</button>
@@ -171,18 +181,8 @@ body {
             <div class="card-title">玩家名称</div>
             <div id="name-inputs"></div>
             <div class="card-title" style="margin-top:20px">本局配置预览</div>
-            <div class="config-preview" id="config-preview">
-                <div class="config-item"><div class="config-role">🗿 石像鬼</div><div class="config-count">×1</div></div>
-                <div class="config-item"><div class="config-role">🐺 普通狼人</div><div class="config-count">×1</div></div>
-                <div class="config-item"><div class="config-role">🌙 预言家</div><div class="config-count">×1</div></div>
-                <div class="config-item"><div class="config-role">✨ 女巫</div><div class="config-count">×1</div></div>
-                <div class="config-item"><div class="config-role">👨 村民</div><div class="config-count">×1</div></div>
-            </div>
-            <div class="info-box">
-                <div>👥 5人局：2狼人 vs 3好人</div>
-                <div>🎴 最后1位玩家获得特权卡</div>
-                <div>⚖️ 好人投票权重：1.10</div>
-            </div>
+            <div class="config-preview" id="config-preview"></div>
+            <div class="info-box" id="config-info"></div>
         </div>
         <div class="bottom-bar">
             <button class="btn btn-primary btn-block btn-lg" onclick="setupGame()">✨ 分配角色</button>
@@ -298,17 +298,37 @@ const PRIVILEGE_CARDS = {
     JUDGMENT: { id: 'JUDGMENT', name: '审判日', emoji: '⚡', type: 'good_break', desc: '白天投票时你的票算3票（一次性）' }
 };
 
-// 5人局配置
-const CONFIG_5 = {
-    roles: [ROLE.GARGOYLE, ROLE.WEREWOLF, ROLE.PROPHET, ROLE.WITCH, ROLE.VILLAGER],
-    goodVotePower: 1.10,
-    cardCount: 1,
-    prophetImmuneNights: 0,
-    witchCanSelfSave: false
-};
+// 动态配置
+function getConfig(playerCount) {
+    const configs = {
+        5: {
+            roles: [ROLE.GARGOYLE, ROLE.WEREWOLF, ROLE.PROPHET, ROLE.WITCH, ROLE.VILLAGER],
+            goodVotePower: 1.10,
+            cardCount: 1,
+            prophetImmuneNights: 0,
+            witchCanSelfSave: false,
+            wolfCount: 2,
+            desc: '2狼 vs 3好人 · 女巫不能自救'
+        },
+        6: {
+            roles: [ROLE.GARGOYLE, ROLE.WEREWOLF, ROLE.WEREWOLF, ROLE.PROPHET, ROLE.WITCH, ROLE.HUNTER],
+            goodVotePower: 2.00,
+            cardCount: 1,
+            prophetImmuneNights: 2,
+            witchCanSelfSave: true,
+            wolfCount: 3,
+            desc: '3狼 vs 3好人 · 女巫可自救 · 预言家前两夜免疫'
+        }
+    };
+    return configs[playerCount] || configs[5];
+}
+
+// 默认人数
+let playerCount = 5;
 
 // 游戏状态
 let gameState = {
+    playerCount: 5,
     players: [],
     dayNumber: 1,
     phase: PHASE.SETUP,
@@ -387,6 +407,7 @@ function hideLogModal() {
 
 function resetGame() {
     gameState = {
+        playerCount: playerCount,
         players: [], dayNumber: 1, phase: PHASE.SETUP,
         deathsTonight: new Set(), deathCauses: {}, winner: null, gameLog: [],
         publicAccusation: null,
@@ -399,6 +420,60 @@ function resetGame() {
     };
     showScreen('screen-home');
     renderNameInputs();
+    updateConfigPreview();
+}
+
+// =====================================================
+// 人数选择
+// =====================================================
+
+function selectPlayerCount(count) {
+    playerCount = count;
+    gameState.playerCount = count;
+
+    // 更新按钮样式
+    document.getElementById('btn-5p').className = count === 5
+        ? 'btn btn-secondary btn-sm'
+        : 'btn btn-ghost btn-sm';
+    document.getElementById('btn-6p').className = count === 6
+        ? 'btn btn-secondary btn-sm'
+        : 'btn btn-ghost btn-sm';
+
+    const cfg = getConfig(count);
+    document.getElementById('selected-mode-desc').textContent = cfg.desc;
+
+    renderNameInputs();
+    updateConfigPreview();
+}
+
+function updateConfigPreview() {
+    const cfg = getConfig(playerCount);
+    const preview = document.getElementById('config-preview');
+    const info = document.getElementById('config-info');
+
+    // 统计角色数量
+    const roleCounts = {};
+    cfg.roles.forEach(r => {
+        roleCounts[r.key] = (roleCounts[r.key] || 0) + 1;
+    });
+
+    // 生成预览HTML
+    const roleItems = Object.entries(roleCounts).map(([key, count]) => {
+        const role = Object.values(ROLE).find(r => r.key === key);
+        return `<div class="config-item"><div class="config-role">${role.emoji} ${role.name}</div><div class="config-count">×${count}</div></div>`;
+    }).join('');
+
+    preview.innerHTML = roleItems;
+
+    const goodCount = cfg.roles.filter(r => r.alignment === ALIGNMENT.GOOD).length;
+    const wolfCount = cfg.roles.filter(r => r.alignment === ALIGNMENT.WOLF).length;
+    info.innerHTML = `
+        <div>👥 ${playerCount}人局：${wolfCount}狼人 vs ${goodCount}好人</div>
+        <div>🎴 最后${cfg.cardCount}位玩家获得特权卡</div>
+        <div>⚖️ 好人投票权重：${cfg.goodVotePower}</div>
+        ${!cfg.witchCanSelfSave ? '<div>⚠️ 女巫不能自救</div>' : '<div>💊 女巫可自救（1次，不消耗解药）</div>'}
+        ${cfg.prophetImmuneNights > 0 ? `<div>🛡️ 预言家前${cfg.prophetImmuneNights}夜免疫狼刀</div>` : ''}
+    `;
 }
 
 // =====================================================
@@ -408,7 +483,7 @@ function resetGame() {
 function renderNameInputs() {
     const container = document.getElementById('name-inputs');
     container.innerHTML = '';
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < playerCount; i++) {
         const row = document.createElement('div');
         row.className = 'name-input-row';
         row.innerHTML = `
@@ -430,12 +505,14 @@ function toggleGender(btn) {
 // =====================================================
 
 function setupGame() {
+    const cfg = getConfig(playerCount);
+
     // 读取玩家名称和性别
     const inputs = document.querySelectorAll('.name-input');
     const genders = document.querySelectorAll('.gender-toggle');
 
     gameState.players = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < playerCount; i++) {
         gameState.players.push({
             id: i,
             name: inputs[i].value || `玩家${i + 1}`,
@@ -446,26 +523,19 @@ function setupGame() {
             alive: true,
             votePower: 1.0,
             baseVotePower: 1.0,
-            // 预言家
             checkedIds: new Set(),
             checkResults: {},
-            // 石像鬼
             gargoyleCheckedIds: new Set(),
             gargoyleCheckResults: {},
             gargoyleAwakened: false,
-            // 女巫
             cureUsed: 0,
             poisonUsed: 0,
             selfSaveUsed: false,
-            // 守卫
             guardedId: null,
-            // 猎人
             canShoot: true,
-            // 免疫与效果
             immuneTonight: false,
             silencedToday: false,
             skillSealed: false,
-            // 特权卡
             hasCard: false,
             card: null,
             cardUsed: false,
@@ -475,42 +545,45 @@ function setupGame() {
     }
 
     // 分配角色
-    const shuffledRoles = shuffle(CONFIG_5.roles);
+    const shuffledRoles = shuffle(cfg.roles);
     gameState.players.forEach((p, i) => {
         const role = shuffledRoles[i];
         p.role = role;
         p.roleKey = role.key;
         p.alignment = role.alignment;
-        p.baseVotePower = role.alignment === ALIGNMENT.GOOD ? CONFIG_5.goodVotePower : 1.0;
+        p.baseVotePower = role.alignment === ALIGNMENT.GOOD ? cfg.goodVotePower : 1.0;
         p.votePower = p.baseVotePower;
     });
 
-    // 分配特权卡（最后1位玩家）
-    const holder = gameState.players[4]; // 最后1位
-    if (holder.alignment === ALIGNMENT.WOLF) {
-        const wolfCards = [
-            PRIVILEGE_CARDS.SILENCE_SEAL, PRIVILEGE_CARDS.HALF_VOTE,
-            PRIVILEGE_CARDS.NO_SKILL, PRIVILEGE_CARDS.DISRUPTOR,
-            PRIVILEGE_CARDS.FRAME_UP, PRIVILEGE_CARDS.MIST
-        ];
-        holder.card = wolfCards[Math.floor(Math.random() * wolfCards.length)];
-    } else {
-        const goodCards = [
-            PRIVILEGE_CARDS.DOUBLE_VOTE, PRIVILEGE_CARDS.IMMUNITY,
-            PRIVILEGE_CARDS.RESCUE, PRIVILEGE_CARDS.POISON,
-            PRIVILEGE_CARDS.CRITICAL_HIT, PRIVILEGE_CARDS.DECOY,
-            PRIVILEGE_CARDS.MIND_READ, PRIVILEGE_CARDS.REVEAL,
-            PRIVILEGE_CARDS.NINE_LIVES, PRIVILEGE_CARDS.JUDGMENT
-        ];
-        holder.card = goodCards[Math.floor(Math.random() * goodCards.length)];
-    }
-    holder.hasCard = true;
+    // 分配特权卡（最后N位玩家）
+    const cardCount = cfg.cardCount;
+    const holders = gameState.players.slice(-cardCount);
+    holders.forEach(holder => {
+        if (holder.alignment === ALIGNMENT.WOLF) {
+            const wolfCards = [
+                PRIVILEGE_CARDS.SILENCE_SEAL, PRIVILEGE_CARDS.HALF_VOTE,
+                PRIVILEGE_CARDS.NO_SKILL, PRIVILEGE_CARDS.DISRUPTOR,
+                PRIVILEGE_CARDS.FRAME_UP, PRIVILEGE_CARDS.MIST
+            ];
+            holder.card = wolfCards[Math.floor(Math.random() * wolfCards.length)];
+        } else {
+            const goodCards = [
+                PRIVILEGE_CARDS.DOUBLE_VOTE, PRIVILEGE_CARDS.IMMUNITY,
+                PRIVILEGE_CARDS.RESCUE, PRIVILEGE_CARDS.POISON,
+                PRIVILEGE_CARDS.CRITICAL_HIT, PRIVILEGE_CARDS.DECOY,
+                PRIVILEGE_CARDS.MIND_READ, PRIVILEGE_CARDS.REVEAL,
+                PRIVILEGE_CARDS.NINE_LIVES, PRIVILEGE_CARDS.JUDGMENT
+            ];
+            holder.card = goodCards[Math.floor(Math.random() * goodCards.length)];
+        }
+        holder.hasCard = true;
+    });
 
-    log(`游戏开始，5人局`, 'info');
+    log(`游戏开始，${playerCount}人局`, 'info');
     log(`玩家分配完成`, 'info');
-    if (holder.hasCard) {
-        log(`玩家 ${holder.name} 获得特权卡: ${holder.card.name}`, 'info');
-    }
+    holders.forEach(h => {
+        if (h.hasCard) log(`玩家 ${h.name} 获得特权卡: ${h.card.name}`, 'info');
+    });
 
     showPrivilegeShowcase();
 }
@@ -558,7 +631,7 @@ function showRoleReveal(index) {
         <div style="text-align:center;margin-bottom:20px;">
             <div style="font-size:16px;color:var(--text-dim);">请把设备交给</div>
             <div style="font-size:22px;font-weight:700;margin-top:4px;">${player.name}</div>
-            <div style="font-size:13px;color:var(--text-dim);margin-top:4px;">${index + 1} / 5</div>
+            <div style="font-size:13px;color:var(--text-dim);margin-top:4px;">${index + 1} / ${gameState.players.length}</div>
         </div>
         <div class="role-reveal-card" id="flip-card" onclick="flipCard(${index})">
             <div id="card-inner">
@@ -580,7 +653,7 @@ function showRoleReveal(index) {
         nav.appendChild(prevBtn);
     }
 
-    if (index < 4) {
+    if (index < gameState.players.length - 1) {
         const nextBtn = document.createElement('button');
         nextBtn.className = 'btn btn-secondary';
         nextBtn.style.width = index > 0 ? '48%' : '100%';
@@ -667,6 +740,16 @@ function startNightPhase() {
     });
 
     log(`======== 第${gameState.dayNumber}夜 ========`, 'info');
+
+    // 预言家免疫狼刀
+    const cfg = getConfig(gameState.playerCount);
+    if (gameState.dayNumber <= cfg.prophetImmuneNights) {
+        const prophet = getAlivePlayers().find(p => p.roleKey === 'prophet');
+        if (prophet) {
+            prophet.immuneTonight = true;
+            log(`🛡️ 预言家 ${prophet.name} 第${gameState.dayNumber}夜免疫狼刀`, 'good');
+        }
+    }
 
     // 应用特权卡效果（夜晚开始时生效）
     applyNightCards();
@@ -1062,10 +1145,11 @@ function showNightWitch() {
             >🌟 今晚平安，无人死亡</div>`;
     }
 
+    const cfg = getConfig(gameState.playerCount);
     // 判断女巫是否能自救
     const witchDying = deaths.has(witch.id);
-    const canSelfSave = CONFIG_5.witchCanSelfSave && witchDying && !witch.selfSaveUsed;
-    const canCure = witch.cureUsed < 1 && !witchDying; // 不能自救（5人局）
+    const canSelfSave = cfg.witchCanSelfSave && witchDying && !witch.selfSaveUsed;
+    const canCure = witch.cureUsed < 1 && !(witchDying && !cfg.witchCanSelfSave);
     const canPoison = witch.poisonUsed < 1;
 
     let buttons = '';
@@ -1092,7 +1176,7 @@ function showNightWitch() {
         <div class="info-box">
             <div>✨ 女巫请睁眼</div>
             <div>解药剩余：${1 - witch.cureUsed} 瓶 | 毒药剩余：${1 - witch.poisonUsed} 瓶</div>
-            ${!CONFIG_5.witchCanSelfSave ? '<div style="color:var(--accent-red)">⚠️ 5人局女巫不能自救</div>' : ''}
+            ${!cfg.witchCanSelfSave ? '<div style="color:var(--accent-red)">⚠️ 女巫不能自救</div>' : '<div style="color:var(--accent-green)">💊 女巫可自救（1次，不消耗解药）</div>'}
         </div>
         <div style="margin-top:16px;">${buttons}</div>
     `;
@@ -1623,9 +1707,10 @@ function checkVictory() {
     const wolfAlive = alive.filter(p => p.alignment === ALIGNMENT.WOLF).length;
 
     // 狼人全灭（普通狼人+石像鬼都死）
+    const totalWolves = gameState.players.filter(p => p.alignment === ALIGNMENT.WOLF).length;
     const allWolvesDead = gameState.players.filter(p =>
         p.alignment === ALIGNMENT.WOLF && !p.alive
-    ).length === 2; // 5人局固定2狼
+    ).length === totalWolves;
 
     if (allWolvesDead) {
         gameState.winner = ALIGNMENT.GOOD;
@@ -1687,19 +1772,32 @@ function showRules() {
             <button class="tab-btn" onclick="switchRuleTab(this, 'cards')"">特权卡</button>
         </div>
         <div id="rule-roles" class="rules-section">
-            <h3>角色配置（5人局）</h3>
+            <h3>5人局配置</h3>
             <div class="config-item"><div class="config-role">🗿 石像鬼</div><div>狼人阵营</div></div>
             <div class="config-item"><div class="config-role">🐺 普通狼人</div><div>狼人阵营</div></div>
             <div class="config-item"><div class="config-role">🌙 预言家</div><div>好人阵营</div></div>
             <div class="config-item"><div class="config-role">✨ 女巫</div><div>好人阵营</div></div>
             <div class="config-item"><div class="config-role">👨 村民</div><div>好人阵营</div></div>
-            <h3 style="margin-top:16px;">关键规则</h3>
+            <div class="info-box" style="margin:12px 0;">
+                <div>2狼 vs 3好人 · 投票权重1.10</div>
+                <div>女巫不能自救 · 预言家无免疫</div>
+            </div>
+            <h3>6人局配置</h3>
+            <div class="config-item"><div class="config-role">🗿 石像鬼</div><div>狼人阵营</div></div>
+            <div class="config-item"><div class="config-role">🐺 普通狼人×2</div><div>狼人阵营</div></div>
+            <div class="config-item"><div class="config-role">🌙 预言家</div><div>好人阵营</div></div>
+            <div class="config-item"><div class="config-role">✨ 女巫</div><div>好人阵营</div></div>
+            <div class="config-item"><div class="config-role">🔫 猎人</div><div>好人阵营</div></div>
+            <div class="info-box" style="margin:12px 0;">
+                <div>3狼 vs 3好人 · 投票权重2.00</div>
+                <div>女巫可自救 · 预言家前两夜免疫</div>
+            </div>
+            <h3>通用规则</h3>
             <ul>
                 <li>预言家和石像鬼查验知道具体角色</li>
                 <li>石像鬼与普通狼人互不知晓身份</li>
-                <li>5人局女巫不能自救</li>
                 <li>死亡玩家身份永远不公开</li>
-                <li>好人投票权重1.10</li>
+                <li>最后1位玩家获得特权卡（按阵营分配）</li>
             </ul>
         </div>
         <div id="rule-flow" class="rules-section" style="display:none;">
