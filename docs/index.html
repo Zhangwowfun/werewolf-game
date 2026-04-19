@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="狼人杀">
+<title>狼人杀 v4.2 · 石像鬼版</title>
+<style>
+:root {
+    --bg-primary: #0a0a1a;
+    --bg-secondary: #12122a;
+    --bg-card: #1a1a3e;
+    --bg-card-hover: #242456;
+    --accent-green: #7fff6e;
+    --accent-lime: #b8ff57;
+    --accent-red: #ff4757;
+    --accent-blue: #57b8ff;
+    --accent-purple: #b457ff;
+    --accent-yellow: #ffd557;
+    --accent-orange: #ff9f43;
+    --accent-pink: #ff6b9d;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0cc;
+    --text-dim: #606088;
+    --border-color: #2a2a5a;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+#app-root { position: fixed; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; background: var(--bg-primary); }
+.screen { display: none; flex-direction: column; width: 100%; height: 100%; position: absolute; top: 0; left: 0; animation: fadeIn 0.3s ease; }
+.screen.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+.header { padding: 20px 24px 10px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.header-title { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, var(--accent-green), var(--accent-lime)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header-back { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; color: var(--text-primary); transition: var(--transition); }
+.header-back:active { transform: scale(0.9); background: var(--bg-card-hover); }
+.content { flex: 1; overflow-y: auto; padding: 10px 24px 24px; -webkit-overflow-scrolling: touch; }
+.bottom-bar { padding: 16px 24px 24px; flex-shrink: 0; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 32px; border-radius: var(--radius); font-size: 17px; font-weight: 600; border: none; cursor: pointer; transition: var(--transition); text-align: center; }
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: linear-gradient(135deg, var(--accent-green), var(--accent-lime)); color: #000; }
+.btn-secondary { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); }
+.btn-ghost { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+.btn-danger { background: linear-gradient(135deg, var(--accent-red), #ff6b6b); color: #fff; }
+.btn-block { width: 100%; }
+.btn-lg { padding: 18px 36px; font-size: 19px; border-radius: 20px; }
+.btn-sm { padding: 10px 20px; font-size: 14px; border-radius: var(--radius-sm); }
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 16px; }
+.card-title { font-size: 15px; font-weight: 700; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase; }
+.info-box { background: rgba(87,184,255,0.08); border: 1px solid rgba(87,184,255,0.2); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px; font-size: 14px; line-height: 1.7; color: var(--text-secondary); }
+.info-box div { margin: 4px 0; }
+.player-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.player-card { background: var(--bg-card); border: 2px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 8px; text-align: center; cursor: pointer; transition: var(--transition); position: relative; }
+.player-card:active { transform: scale(0.95); }
+.player-card.selected { border-color: var(--accent-green); background: rgba(127,255,110,0.08); }
+.player-card.dead { opacity: 0.5; border-color: var(--accent-red); background: rgba(255,71,87,0.05); }
+.player-card.dead .player-avatar { filter: grayscale(100%); }
+.player-card .check-mark { position: absolute; top: 6px; right: 6px; font-size: 16px; display: none; }
+.player-card.selected .check-mark { display: block; color: var(--accent-green); }
+.player-avatar { font-size: 36px; line-height: 1; margin-bottom: 6px; }
+.player-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.phase-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+.phase-badge.night { background: rgba(180,87,255,0.15); color: var(--accent-purple); border: 1px solid rgba(180,87,255,0.3); }
+.phase-badge.day { background: rgba(255,213,87,0.15); color: var(--accent-yellow); border: 1px solid rgba(255,213,87,0.3); }
+.log-entry { font-size: 13px; color: var(--text-secondary); padding: 6px 0; border-bottom: 1px solid rgba(42,42,90,0.5); }
+.log-entry:last-child { border-bottom: none; }
+.log-entry.wolf { color: var(--accent-red); }
+.log-entry.good { color: var(--accent-green); }
+.log-entry.info { color: var(--accent-blue); }
+.role-reveal-card { width: 100%; height: 280px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(160deg, #12122a, #1e1e46); border: 2px solid var(--border-color); cursor: pointer; padding: 24px; transition: all 0.3s; }
+.role-reveal-card.flipped { border-color: var(--accent-yellow); background: linear-gradient(160deg, #1a1a3e, #2a2a5a); }
+.role-icon-big { font-size: 100px; line-height: 1; }
+.role-name-big { font-size: 28px; font-weight: 800; color: var(--accent-yellow); margin-top: 12px; }
+.role-desc-text { font-size: 14px; color: var(--text-secondary); margin-top: 8px; text-align: center; }
+.privilege-card-display { margin-top: 14px; padding: 12px 16px; border-radius: 14px; background: rgba(255,213,87,0.08); border: 1px solid rgba(255,213,87,0.3); text-align: left; }
+.privilege-card-display .label { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 4px; }
+.privilege-card-display .name { font-size: 18px; font-weight: 800; color: var(--accent-yellow); }
+.privilege-card-display .desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
+.modal-overlay.active { display: flex; }
+.modal-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; max-width: 400px; width: 100%; max-height: 80vh; overflow-y: auto; }
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.dawn-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px 20px; text-align: center; margin: 16px 0; }
+.dawn-card.killed { border-color: rgba(255,71,87,0.3); background: rgba(255,71,87,0.05); }
+.dawn-card.safe { border-color: rgba(127,255,110,0.3); background: rgba(127,255,110,0.05); }
+.stat-row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+.stat-chip { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--text-secondary); }
+.stat-chip strong { color: var(--text-primary); }
+.vote-candidate { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; transition: var(--transition); }
+.vote-candidate:active { transform: scale(0.98); }
+.vote-candidate.selected { border-color: var(--accent-green); background: rgba(127,255,110,0.08); }
+.name-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.gender-toggle { width: 44px; height: 44px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
+.name-input { flex: 1; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 16px; outline: none; }
+.name-input:focus { border-color: var(--accent-green); }
+.home-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; text-align: center; }
+.home-title { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, var(--accent-green), var(--accent-lime)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+.home-subtitle { font-size: 16px; color: var(--text-secondary); margin-bottom: 40px; }
+.home-buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+.config-preview { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.config-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(42,42,90,0.3); }
+.config-item:last-child { border-bottom: none; }
+.config-role { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.config-count { font-size: 18px; font-weight: 700; color: var(--accent-green); }
+.alert-box { background: rgba(255,159,67,0.1); border: 1px solid rgba(255,159,67,0.3); border-radius: var(--radius-sm); padding: 14px 16px; margin: 16px 0; text-align: center; }
+.alert-box .title { font-size: 16px; font-weight: 700; color: var(--accent-orange); margin-bottom: 6px; }
+.alert-box .text { font-size: 14px; color: var(--text-secondary); }
+.result-winner { font-size: 32px; font-weight: 800; text-align: center; margin: 20px 0; }
+.result-winner.good { color: var(--accent-green); }
+.result-winner.wolf { color: var(--accent-red); }
+.reveal-all-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.reveal-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 8px; text-align: center; }
+.reveal-card .emoji { font-size: 32px; }
+.reveal-card .name { font-size: 13px; font-weight: 600; margin-top: 4px; }
+.reveal-card .role { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.tab-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab-btn { flex: 1; padding: 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); }
+.tab-btn.active { background: rgba(127,255,110,0.1); border-color: var(--accent-green); color: var(--accent-green); }
+.rules-section { margin-bottom: 20px; }
+.rules-section h3 { font-size: 16px; font-weight: 700; color: var(--accent-yellow); margin-bottom: 10px; }
+.rules-section p, .rules-section li { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 6px; }
+.rules-section ul { padding-left: 20px; }
+.card-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.mini-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; }
+.mini-card .emoji { font-size: 24px; }
+.mini-card .name { font-size: 13px; font-weight: 700; margin-top: 4px; }
+.mini-card .desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; line-height: 1.4; }
+@media (min-width: 768px) {
+    .player-grid { grid-template-columns: repeat(5, 1fr); }
+    .reveal-all-grid { grid-template-columns: repeat(5, 1fr); }
+}
+</style>
+</head>
+<body>
+<div id="app-root">
+
+    <!-- 首页 -->
+    <div id="screen-home" class="screen active">
+        <div class="home-container">
+            <div class="home-title">狼人杀</div>
+            <div class="home-subtitle">v4.2 · 石像鬼版</div>
+            <div class="home-buttons">
+                <button class="btn btn-primary btn-lg" onclick="showScreen('screen-setup')">🎮 开始游戏</button>
+                <button class="btn btn-secondary" onclick="showRules()">📖 规则说明</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置页面 -->
+    <div id="screen-setup" class="screen">
+        <div class="header">
+            <button class="header-back" onclick="showScreen('screen-home')">←</button>
+            <div class="header-title">游戏设置</div>
+            <div style="width:40px"></div>
+        </div>
+        <div class="content">
+            <div class="card-title">玩家名称</div>
+            <div id="name-inputs"></div>
+            <div class="card-title" style="margin-top:20px">本局配置预览</div>
+            <div class="config-preview" id="config-preview">
+                <div class="config-item"><div class="config-role">🗿 石像鬼</div><div class="config-count">×1</div></div>
+                <div class="config-item"><div class="config-role">🐺 普通狼人</div><div class="config-count">×1</div></div>
+                <div class="config-item"><div class="config-role">🌙 预言家</div><div class="config-count">×1</div></div>
+                <div class="config-item"><div class="config-role">✨ 女巫</div><div class="config-count">×1</div></div>
+                <div class="config-item"><div class="config-role">👨 村民</div><div class="config-count">×1</div></div>
+            </div>
+            <div class="info-box">
+                <div>👥 5人局：2狼人 vs 3好人</div>
+                <div>🎴 最后1位玩家获得特权卡</div>
+                <div>⚖️ 好人投票权重：1.10</div>
+            </div>
+        </div>
+        <div class="bottom-bar">
+            <button class="btn btn-primary btn-block btn-lg" onclick="setupGame()">✨ 分配角色</button>
+        </div>
+    </div>
+
+    <!-- 特权卡展示 -->
+    <div id="screen-privilege" class="screen">
+        <div class="header">
+            <div class="header-title">✦ 特权卡展示</div>
+            <div style="width:40px"></div>
+        </div>
+        <div class="content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+            <div id="privilege-content"></div>
+        </div>
+        <div class="bottom-bar">
+            <button class="btn btn-primary btn-block btn-lg" onclick="proceedToRoleReveal()">👁 查看角色</button>
+        </div>
+    </div>
+
+    <!-- 角色分配 -->
+    <div id="screen-role" class="screen">
+        <div class="header">
+            <div class="header-title">角色分配</div>
+            <div style="width:40px"></div>
+        </div>
+        <div class="content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div id="role-reveal-content"></div>
+        </div>
+        <div class="bottom-bar" id="role-nav"></div>
+    </div>
+
+    <!-- 游戏主界面 -->
+    <div id="screen-game" class="screen">
+        <div class="header">
+            <div class="header-back" onclick="confirmQuit()">←</div>
+            <div class="header-title" id="game-phase-text">第1夜</div>
+            <button class="header-back" onclick="showGameLog()" style="font-size:16px">📋</button>
+        </div>
+        <div class="content" id="game-content"></div>
+        <div class="bottom-bar" id="game-bottom-bar"></div>
+    </div>
+
+    <!-- 结果界面 -->
+    <div id="screen-result" class="screen">
+        <div class="header">
+            <div class="header-title">游戏结束</div>
+            <div style="width:40px"></div>
+        </div>
+        <div class="content">
+            <div id="result-content"></div>
+        </div>
+        <div class="bottom-bar">
+            <button class="btn btn-primary btn-block btn-lg" onclick="resetGame()">🔄 再来一局</button>
+        </div>
+    </div>
+
+    <!-- 规则弹窗 -->
+    <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)hideModal()">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <!-- 游戏日志弹窗 -->
+    <div class="modal-overlay" id="log-modal" onclick="if(event.target===this)hideLogModal()">
+        <div class="modal-content" style="max-height:70vh;">
+            <div class="modal-title">📋 游戏日志</div>
+            <div id="log-content" style="max-height:50vh;overflow-y:auto;"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+// =====================================================
+// 常量与数据模型
+// =====================================================
+
+const ALIGNMENT = { GOOD: 'good', WOLF: 'wolf' };
+
+const ROLE = {
+    VILLAGER: { key: 'villager', name: '村民', emoji: '👨', alignment: ALIGNMENT.GOOD, desc: '白天投票，无特殊技能' },
+    WEREWOLF: { key: 'werewolf', name: '普通狼人', emoji: '🐺', alignment: ALIGNMENT.WOLF, desc: '每晚选择1人击杀' },
+    PROPHET: { key: 'prophet', name: '预言家', emoji: '🌙', alignment: ALIGNMENT.GOOD, desc: '每晚查验1人，知道具体角色' },
+    WITCH: { key: 'witch', name: '女巫', emoji: '✨', alignment: ALIGNMENT.GOOD, desc: '1瓶解药(救人)+1瓶毒药' },
+    HUNTER: { key: 'hunter', name: '猎人', emoji: '🔫', alignment: ALIGNMENT.GOOD, desc: '死亡时可开枪带走1人(被毒不能)' },
+    GUARDIAN: { key: 'guardian', name: '守卫', emoji: '🛡️', alignment: ALIGNMENT.GOOD, desc: '每晚守护1人，免疫刀杀' },
+    GARGOYLE: { key: 'gargoyle', name: '石像鬼', emoji: '🗿', alignment: ALIGNMENT.WOLF, desc: '每晚查验1人；狼人死光后觉醒刀人' }
+};
+
+const PHASE = { SETUP: 'setup', NIGHT: 'night', DAY: 'day', VOTE: 'vote', END: 'end' };
+
+// 特权卡定义
+const PRIVILEGE_CARDS = {
+    // 狼人卡池（维持平衡）
+    SILENCE_SEAL: { id: 'SILENCE_SEAL', name: '沉默之印', emoji: '🤐', type: 'wolf_balance', desc: '当晚不能发言投票' },
+    HALF_VOTE: { id: 'HALF_VOTE', name: '半票权', emoji: '⚖️', type: 'wolf_balance', desc: '投票权变为0.5' },
+    NO_SKILL: { id: 'NO_SKILL', name: '技能封印', emoji: '🔒', type: 'wolf_balance', desc: '当晚无法使用技能' },
+    DISRUPTOR: { id: 'DISRUPTOR', name: '搅局者', emoji: '🌀', type: 'wolf_balance', desc: '投票目标额外+2票（不公开）' },
+    FRAME_UP: { id: 'FRAME_UP', name: '嫁祸', emoji: '🎭', type: 'wolf_balance', desc: '当晚查验你的人都显示为"村民"' },
+    MIST: { id: 'MIST', name: '迷雾', emoji: '🌫️', type: 'wolf_balance', desc: '当晚所有人查验结果显示为随机角色' },
+    // 好人卡池-维持平衡
+    DOUBLE_VOTE: { id: 'DOUBLE_VOTE', name: '双票权', emoji: '🗳️', type: 'good_balance', desc: '投票权变为2' },
+    IMMUNITY: { id: 'IMMUNITY', name: '免疫卡', emoji: '🛡️', type: 'good_balance', desc: '当晚免疫死亡（刀+毒）' },
+    RESCUE: { id: 'RESCUE', name: '紧急救援', emoji: '💊', type: 'good_balance', desc: '女巫额外获得1瓶解药' },
+    POISON: { id: 'POISON', name: '额外毒药', emoji: '🧪', type: 'good_balance', desc: '女巫额外获得1瓶毒药' },
+    CRITICAL_HIT: { id: 'CRITICAL_HIT', name: '致命一击', emoji: '💥', type: 'good_balance', desc: '当晚投票权×3（一次性）' },
+    DECOY: { id: 'DECOY', name: '替身傀儡', emoji: '🎎', type: 'good_balance', desc: '被刀杀时死亡转移到随机存活玩家' },
+    MIND_READ: { id: 'MIND_READ', name: '心声聆听', emoji: '👂', type: 'good_balance', desc: '知道昨晚谁查验了你' },
+    // 好人卡池-打破平衡
+    REVEAL: { id: 'REVEAL', name: '真相揭露', emoji: '🔍', type: 'good_break', desc: '上帝强制公开1人真实身份' },
+    NINE_LIVES: { id: 'NINE_LIVES', name: '九命猫', emoji: '🐱', type: 'good_break', desc: '死亡时50%概率复活（限1次）' },
+    JUDGMENT: { id: 'JUDGMENT', name: '审判日', emoji: '⚡', type: 'good_break', desc: '白天投票时你的票算3票（一次性）' }
+};
+
+// 5人局配置
+const CONFIG_5 = {
+    roles: [ROLE.GARGOYLE, ROLE.WEREWOLF, ROLE.PROPHET, ROLE.WITCH, ROLE.VILLAGER],
+    goodVotePower: 1.10,
+    cardCount: 1,
+    prophetImmuneNights: 0,
+    witchCanSelfSave: false
+};
+
+// 游戏状态
+let gameState = {
+    players: [],
+    dayNumber: 1,
+    phase: PHASE.SETUP,
+    deathsTonight: new Set(),
+    deathCauses: {},
+    winner: null,
+    gameLog: [],
+    publicAccusation: null,
+    // 夜晚临时状态
+    pendingAction: null,
+    selectedTarget: null,
+    nightKillTarget: null,
+    gargoyleKillTarget: null,
+    prophetCheckTarget: null,
+    gargoyleCheckTarget: null,
+    witchSelfSave: false,
+    witchCure: false,
+    witchPoison: false,
+    witchPoisonTarget: null,
+    guardianTarget: null,
+    // 投票
+    voteMap: {},
+    voterIndex: 0
+};
+
+// =====================================================
+// 工具函数
+// =====================================================
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function log(msg, type = 'normal') {
+    gameState.gameLog.push({ day: gameState.dayNumber, phase: gameState.phase, msg, type });
+}
+
+function getAlivePlayers() {
+    return gameState.players.filter(p => p.alive);
+}
+
+function getPlayerById(id) {
+    return gameState.players.find(p => p.id === id);
+}
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function showModal(content) {
+    document.getElementById('modal-content').innerHTML = content;
+    document.getElementById('modal-overlay').classList.add('active');
+}
+
+function hideModal() {
+    document.getElementById('modal-overlay').classList.remove('active');
+}
+
+function showGameLog() {
+    const logs = gameState.gameLog.map(l =>
+        `<div class="log-entry ${l.type}"><span class="time">[${l.day}夜]</span>${l.msg}</div>`
+    ).join('');
+    document.getElementById('log-content').innerHTML = logs || '<div style="color:var(--text-dim)">暂无日志</div>';
+    document.getElementById('log-modal').classList.add('active');
+}
+
+function hideLogModal() {
+    document.getElementById('log-modal').classList.remove('active');
+}
+
+function resetGame() {
+    gameState = {
+        players: [], dayNumber: 1, phase: PHASE.SETUP,
+        deathsTonight: new Set(), deathCauses: {}, winner: null, gameLog: [],
+        publicAccusation: null,
+        pendingAction: null, selectedTarget: null,
+        nightKillTarget: null, gargoyleKillTarget: null,
+        prophetCheckTarget: null, gargoyleCheckTarget: null,
+        witchSelfSave: false, witchCure: false, witchPoison: false,
+        witchPoisonTarget: null, guardianTarget: null,
+        voteMap: {}, voterIndex: 0
+    };
+    showScreen('screen-home');
+    renderNameInputs();
+}
+
+// =====================================================
+// 设置页面
+// =====================================================
+
+function renderNameInputs() {
+    const container = document.getElementById('name-inputs');
+    container.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const row = document.createElement('div');
+        row.className = 'name-input-row';
+        row.innerHTML = `
+            <button class="gender-toggle" data-index="${i}" data-gender="male" onclick="toggleGender(this)"">👨</button>
+            <input type="text" class="name-input" placeholder="玩家${i + 1}名称" data-index="${i}" value="玩家${i + 1}">
+        `;
+        container.appendChild(row);
+    }
+}
+
+function toggleGender(btn) {
+    const isMale = btn.dataset.gender === 'male';
+    btn.dataset.gender = isMale ? 'female' : 'male';
+    btn.textContent = isMale ? '👩' : '👨';
+}
+
+// =====================================================
+// 游戏初始化
+// =====================================================
+
+function setupGame() {
+    // 读取玩家名称和性别
+    const inputs = document.querySelectorAll('.name-input');
+    const genders = document.querySelectorAll('.gender-toggle');
+
+    gameState.players = [];
+    for (let i = 0; i < 5; i++) {
+        gameState.players.push({
+            id: i,
+            name: inputs[i].value || `玩家${i + 1}`,
+            gender: genders[i].dataset.gender,
+            role: null,
+            roleKey: null,
+            alignment: null,
+            alive: true,
+            votePower: 1.0,
+            baseVotePower: 1.0,
+            // 预言家
+            checkedIds: new Set(),
+            checkResults: {},
+            // 石像鬼
+            gargoyleCheckedIds: new Set(),
+            gargoyleCheckResults: {},
+            gargoyleAwakened: false,
+            // 女巫
+            cureUsed: 0,
+            poisonUsed: 0,
+            selfSaveUsed: false,
+            // 守卫
+            guardedId: null,
+            // 猎人
+            canShoot: true,
+            // 免疫与效果
+            immuneTonight: false,
+            silencedToday: false,
+            skillSealed: false,
+            // 特权卡
+            hasCard: false,
+            card: null,
+            cardUsed: false,
+            nineLivesUsed: false,
+            mindReadInfo: ''
+        });
+    }
+
+    // 分配角色
+    const shuffledRoles = shuffle(CONFIG_5.roles);
+    gameState.players.forEach((p, i) => {
+        const role = shuffledRoles[i];
+        p.role = role;
+        p.roleKey = role.key;
+        p.alignment = role.alignment;
+        p.baseVotePower = role.alignment === ALIGNMENT.GOOD ? CONFIG_5.goodVotePower : 1.0;
+        p.votePower = p.baseVotePower;
+    });
+
+    // 分配特权卡（最后1位玩家）
+    const holder = gameState.players[4]; // 最后1位
+    if (holder.alignment === ALIGNMENT.WOLF) {
+        const wolfCards = [
+            PRIVILEGE_CARDS.SILENCE_SEAL, PRIVILEGE_CARDS.HALF_VOTE,
+            PRIVILEGE_CARDS.NO_SKILL, PRIVILEGE_CARDS.DISRUPTOR,
+            PRIVILEGE_CARDS.FRAME_UP, PRIVILEGE_CARDS.MIST
+        ];
+        holder.card = wolfCards[Math.floor(Math.random() * wolfCards.length)];
+    } else {
+        const goodCards = [
+            PRIVILEGE_CARDS.DOUBLE_VOTE, PRIVILEGE_CARDS.IMMUNITY,
+            PRIVILEGE_CARDS.RESCUE, PRIVILEGE_CARDS.POISON,
+            PRIVILEGE_CARDS.CRITICAL_HIT, PRIVILEGE_CARDS.DECOY,
+            PRIVILEGE_CARDS.MIND_READ, PRIVILEGE_CARDS.REVEAL,
+            PRIVILEGE_CARDS.NINE_LIVES, PRIVILEGE_CARDS.JUDGMENT
+        ];
+        holder.card = goodCards[Math.floor(Math.random() * goodCards.length)];
+    }
+    holder.hasCard = true;
+
+    log(`游戏开始，5人局`, 'info');
+    log(`玩家分配完成`, 'info');
+    if (holder.hasCard) {
+        log(`玩家 ${holder.name} 获得特权卡: ${holder.card.name}`, 'info');
+    }
+
+    showPrivilegeShowcase();
+}
+
+// =====================================================
+// 特权卡展示
+// =====================================================
+
+function showPrivilegeShowcase() {
+    const holder = gameState.players.find(p => p.hasCard);
+    const content = document.getElementById('privilege-content');
+
+    if (!holder) {
+        content.innerHTML = '<div style="color:var(--text-dim);font-size:18px;">本局无特权卡</div>';
+    } else {
+        const card = holder.card;
+        const campText = holder.alignment === ALIGNMENT.WOLF ? '狼人阵营' : '好人阵营';
+        const typeText = card.type.includes('balance') ? '维持平衡' : '打破平衡';
+        content.innerHTML = `
+            <div style="font-size:60px;margin-bottom:16px;">✦</div>
+            <div style="font-size:16px;color:var(--text-dim);margin-bottom:8px;">${holder.name} 持有</div>
+            <div style="font-size:48px;margin:16px 0;">${card.emoji}</div>
+            <div style="font-size:24px;font-weight:800;color:var(--accent-yellow);margin-bottom:8px;">${card.name}</div>
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">${campText} · ${typeText}</div>
+            <div style="font-size:15px;color:var(--text-secondary);line-height:1.7;max-width:280px;">${card.desc}</div>
+        `;
+    }
+    showScreen('screen-privilege');
+}
+
+function proceedToRoleReveal() {
+    showScreen('screen-role');
+    showRoleReveal(0);
+}
+
+// =====================================================
+// 角色分配
+// =====================================================
+
+function showRoleReveal(index) {
+    const player = gameState.players[index];
+    const container = document.getElementById('role-reveal-content');
+
+    container.innerHTML = `
+        <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:16px;color:var(--text-dim);">请把设备交给</div>
+            <div style="font-size:22px;font-weight:700;margin-top:4px;">${player.name}</div>
+            <div style="font-size:13px;color:var(--text-dim);margin-top:4px;">${index + 1} / 5</div>
+        </div>
+        <div class="role-reveal-card" id="flip-card" onclick="flipCard(${index})">
+            <div id="card-inner">
+                <div class="role-icon-big">❓</div>
+                <div style="font-size:14px;color:var(--text-dim);margin-top:10px;">点击翻开</div>
+            </div>
+        </div>
+    `;
+
+    const nav = document.getElementById('role-nav');
+    nav.innerHTML = '';
+
+    if (index > 0) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn btn-ghost';
+        prevBtn.style.width = '48%';
+        prevBtn.textContent = '← 上一位';
+        prevBtn.onclick = () => showRoleReveal(index - 1);
+        nav.appendChild(prevBtn);
+    }
+
+    if (index < 4) {
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-secondary';
+        nextBtn.style.width = index > 0 ? '48%' : '100%';
+        nextBtn.textContent = '下一位 →';
+        nextBtn.onclick = () => showRoleReveal(index + 1);
+        nav.appendChild(nextBtn);
+    } else {
+        const startBtn = document.createElement('button');
+        startBtn.className = 'btn btn-primary btn-lg';
+        startBtn.style.width = '100%';
+        startBtn.textContent = '🎮 开始游戏';
+        startBtn.onclick = () => startGamePhase();
+        nav.appendChild(startBtn);
+    }
+}
+
+function flipCard(index) {
+    const player = gameState.players[index];
+    const card = document.getElementById('flip-card');
+    const inner = document.getElementById('card-inner');
+
+    if (card.classList.contains('flipped')) {
+        inner.innerHTML = `
+            <div class="role-icon-big">❓</div>
+            <div style="font-size:14px;color:var(--text-dim);margin-top:10px;">点击翻开</div>
+        `;
+        card.classList.remove('flipped');
+    } else {
+        let cardHtml = '';
+        if (player.hasCard) {
+            cardHtml = `
+                <div class="privilege-card-display">
+                    <div class="label">✦ 你的特权卡</div>
+                    <div class="name">${player.card.emoji} ${player.card.name}</div>
+                    <div class="desc">${player.card.desc}</div>
+                </div>
+            `;
+        }
+        inner.innerHTML = `
+            <div class="role-icon-big">${player.role.emoji}</div>
+            <div class="role-name-big">${player.role.name}</div>
+            <div class="role-desc-text">${player.role.desc}</div>
+            ${cardHtml}
+        `;
+        card.classList.add('flipped');
+    }
+}
+
+// =====================================================
+// 游戏主循环
+// =====================================================
+
+function startGamePhase() {
+    showScreen('screen-game');
+    gameState.phase = PHASE.NIGHT;
+    gameState.dayNumber = 1;
+    startNightPhase();
+}
+
+// =====================================================
+// 夜晚阶段
+// =====================================================
+
+function startNightPhase() {
+    gameState.phase = PHASE.NIGHT;
+    gameState.deathsTonight = new Set();
+    gameState.deathCauses = {};
+    gameState.nightKillTarget = null;
+    gameState.gargoyleKillTarget = null;
+    gameState.prophetCheckTarget = null;
+    gameState.gargoyleCheckTarget = null;
+    gameState.witchSelfSave = false;
+    gameState.witchCure = false;
+    gameState.witchPoison = false;
+    gameState.witchPoisonTarget = null;
+    gameState.guardianTarget = null;
+
+    // 重置每轮效果
+    getAlivePlayers().forEach(p => {
+        p.votePower = p.baseVotePower;
+        p.immuneTonight = false;
+        p.silencedToday = false;
+        p.skillSealed = false;
+    });
+
+    log(`======== 第${gameState.dayNumber}夜 ========`, 'info');
+
+    // 应用特权卡效果（夜晚开始时生效）
+    applyNightCards();
+
+    // 检查石像鬼觉醒
+    checkGargoyleAwaken();
+
+    // 开始夜晚流程
+    showNightWolfKill();
+}
+
+function applyNightCards() {
+    const alive = getAlivePlayers();
+
+    // 检查迷雾
+    const mistHolder = alive.find(p => p.hasCard && p.card.id === 'MIST' && !p.cardUsed);
+    if (mistHolder) {
+        log(`🌫️ 迷雾笼罩全场，当晚查验结果混乱`, 'info');
+    }
+
+    alive.forEach(p => {
+        if (!p.hasCard || p.cardUsed) return;
+        const card = p.card;
+
+        if (card.id === 'IMMUNITY') {
+            p.immuneTonight = true;
+            p.cardUsed = true;
+            log(`${p.name} 使用免疫卡，当晚免疫死亡`, 'good');
+        } else if (card.id === 'DOUBLE_VOTE') {
+            p.votePower = 2.0;
+            p.cardUsed = true;
+            log(`${p.name} 使用双票权`, 'good');
+        } else if (card.id === 'CRITICAL_HIT') {
+            p.votePower *= 3.0;
+            p.cardUsed = true;
+            log(`${p.name} 使用致命一击，投票权×3`, 'good');
+        } else if (card.id === 'RESCUE') {
+            if (p.roleKey === 'witch') {
+                p.cureUsed = Math.max(0, p.cureUsed - 1);
+                p.cardUsed = true;
+                log(`女巫使用紧急救援，获得额外解药`, 'good');
+            }
+        } else if (card.id === 'POISON') {
+            if (p.roleKey === 'witch') {
+                p.poisonUsed = Math.max(0, p.poisonUsed - 1);
+                p.cardUsed = true;
+                log(`女巫使用额外毒药`, 'good');
+            }
+        } else if (card.id === 'NINE_LIVES') {
+            log(`${p.name} 的九命猫待命`, 'good');
+        }
+    });
+}
+
+function checkGargoyleAwaken() {
+    const gargoyle = getAlivePlayers().find(p => p.roleKey === 'gargoyle');
+    if (!gargoyle || gargoyle.gargoyleAwakened) return;
+
+    const aliveWerewolves = getAlivePlayers().filter(p => p.roleKey === 'werewolf');
+    if (aliveWerewolves.length === 0) {
+        gargoyle.gargoyleAwakened = true;
+        log(`🗿 ${gargoyle.name} (石像鬼) 觉醒！获得刀人能力`, 'wolf');
+    }
+}
+
+// 显示狼人刀人界面
+function showNightWolfKill() {
+    const alive = getAlivePlayers();
+    const werewolves = alive.filter(p => p.roleKey === 'werewolf');
+
+    if (werewolves.length === 0) {
+        // 没有普通狼人，检查觉醒石像鬼
+        showNightGargoyleKill();
+        return;
+    }
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 狼人行动`;
+
+    const cards = alive.map(p => playerCardHtml(p, 'nightKill')).join('');
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge night">🌙 狼人行动</span>
+        </div>
+        <div class="info-box">
+            <div>🐺 狼人请睁眼，私下讨论后选择击杀目标</div>
+            <div>🗿 石像鬼不参与刀人</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;"
+            >🐺 选择击杀目标：</div>
+        <div class="player-grid">${cards}</div>
+        <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-block btn-sm" onclick="selectNightKill(null)"
+                >✦ 空刀（不击杀任何人）</button>
+        </div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="confirmNightKill()"
+            >✓ 确认击杀</button>
+    `;
+}
+
+function playerCardHtml(p, action) {
+    const selected = gameState.selectedTarget === p.id ? 'selected' : '';
+    const dead = p.alive ? '' : 'dead';
+    const onclick = p.alive ? `onclick="selectTarget(${p.id}, '${action}')"` : '';
+    return `
+        <div class="player-card ${selected} ${dead}" ${onclick} id="pc-${p.id}">
+            <div class="check-mark">✓</div>
+            <div class="player-avatar">${p.gender === 'female' ? '👩' : '👨'}</div>
+            <div class="player-name">${p.name}</div>
+        </div>
+    `;
+}
+
+function selectTarget(id, action) {
+    gameState.selectedTarget = id;
+    // 根据 action 设置对应的目标变量
+    if (action === 'nightKill') gameState.nightKillTarget = id;
+    if (action === 'gargoyleKill') gameState.gargoyleKillTarget = id;
+    if (action === 'prophetCheck') gameState.prophetCheckTarget = id;
+    if (action === 'gargoyleCheck') gameState.gargoyleCheckTarget = id;
+    if (action === 'witchPoison') gameState.witchPoisonTarget = id;
+    if (action === 'hunterShoot') gameState.selectedTarget = id;
+    // 视觉更新
+    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+    if (id !== null) {
+        const el = document.getElementById(`pc-${id}`);
+        if (el) el.classList.add('selected');
+    }
+}
+
+function selectNightKill(id) {
+    selectTarget(id, 'nightKill');
+}
+
+function confirmNightKill() {
+    if (gameState.nightKillTarget !== null) {
+        const target = getPlayerById(gameState.nightKillTarget);
+        log(`🐺 狼人刀杀: ${target.name}`, 'wolf');
+    } else {
+        log(`🐺 狼人选择空刀`, 'wolf');
+    }
+    gameState.selectedTarget = null;
+    showNightGargoyleKill();
+}
+
+// 觉醒石像鬼刀人
+function showNightGargoyleKill() {
+    const gargoyle = getAlivePlayers().find(p => p.roleKey === 'gargoyle' && p.gargoyleAwakened);
+    if (!gargoyle) {
+        showNightProphetCheck();
+        return;
+    }
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 石像鬼刀人`;
+
+    const alive = getAlivePlayers().filter(p => p.id !== gargoyle.id);
+    const cards = alive.map(p => playerCardHtml(p, 'gargoyleKill')).join('');
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge night">🌙 石像鬼刀人</span>
+        </div>
+        <div class="alert-box">
+            <div class="title">🗿 石像鬼已觉醒</div>
+            <div class="text">${gargoyle.name} 获得刀人能力，请选择击杀目标</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;"
+            >🗿 选择击杀目标：</div>
+        <div class="player-grid">${cards}</div>
+        <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-block btn-sm" onclick="selectGargoyleKill(null)"
+                >✦ 不刀人</button>
+        </div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="confirmGargoyleKill()"
+            >✓ 确认</button>
+    `;
+}
+
+function selectGargoyleKill(id) {
+    selectTarget(id, 'gargoyleKill');
+}
+
+function confirmGargoyleKill() {
+    if (gameState.gargoyleKillTarget !== null) {
+        const target = getPlayerById(gameState.gargoyleKillTarget);
+        log(`🗿 石像鬼刀杀: ${target.name}`, 'wolf');
+    }
+    gameState.selectedTarget = null;
+    showNightProphetCheck();
+}
+
+// 预言家查验
+function showNightProphetCheck() {
+    const prophet = getAlivePlayers().find(p => p.roleKey === 'prophet');
+    if (!prophet || prophet.skillSealed) {
+        showNightGargoyleCheck();
+        return;
+    }
+
+    // 检查迷雾
+    const mistActive = getAlivePlayers().some(p => p.hasCard && p.card.id === 'MIST' && !p.cardUsed);
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 预言家查验`;
+
+    const alive = getAlivePlayers().filter(p => p.id !== prophet.id);
+    const cards = alive.map(p => playerCardHtml(p, 'prophetCheck')).join('');
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge night">🌙 预言家查验</span>
+        </div>
+        <div class="info-box">
+            <div>🌙 预言家请睁眼</div>
+            <div>选择1名玩家查验，上帝会告知其具体角色</div>
+            ${mistActive ? '<div style="color:var(--accent-purple)">🌫️ 注意：迷雾生效中，查验结果可能被干扰</div>' : ''}
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;"
+            >🌙 选择查验目标：</div>
+        <div class="player-grid">${cards}</div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="confirmProphetCheck()"
+            >✓ 确认查验</button>
+    `;
+}
+
+function selectProphetCheck(id) {
+    selectTarget(id, 'prophetCheck');
+}
+
+function confirmProphetCheck() {
+    const prophet = getAlivePlayers().find(p => p.roleKey === 'prophet');
+    if (gameState.prophetCheckTarget === null) {
+        showNightGargoyleCheck();
+        return;
+    }
+
+    const target = getPlayerById(gameState.prophetCheckTarget);
+    prophet.checkedIds.add(target.id);
+
+    // 处理嫁祸效果
+    const frameUpActive = target.hasCard && target.card.id === 'FRAME_UP' && !target.cardUsed;
+    const mistActive = getAlivePlayers().some(p => p.hasCard && p.card.id === 'MIST' && !p.cardUsed);
+
+    let resultRole;
+    if (mistActive) {
+        const allRoles = ['villager', 'werewolf', 'prophet', 'witch', 'gargoyle'];
+        resultRole = ROLE[allRoles[Math.floor(Math.random() * allRoles.length)].toUpperCase()];
+        log(`🌙 预言家查验 ${target.name} → ${resultRole.name} (迷雾干扰)`, 'info');
+    } else if (frameUpActive) {
+        resultRole = ROLE.VILLAGER;
+        log(`🌙 预言家查验 ${target.name} → ${resultRole.name} (嫁祸干扰)`, 'info');
+    } else {
+        resultRole = target.role;
+        log(`🌙 预言家查验 ${target.name} → ${resultRole.name}`, 'info');
+    }
+
+    prophet.checkResults[target.id] = resultRole;
+    gameState.selectedTarget = null;
+
+    // 显示结果
+    showCheckResult('预言家', prophet.name, target.name, resultRole.name, resultRole.emoji);
+}
+
+// 石像鬼查验
+function showNightGargoyleCheck() {
+    const gargoyle = getAlivePlayers().find(p => p.roleKey === 'gargoyle');
+    if (!gargoyle || !gargoyle.alive || gargoyle.skillSealed) {
+        showNightWitch();
+        return;
+    }
+
+    const mistActive = getAlivePlayers().some(p => p.hasCard && p.card.id === 'MIST' && !p.cardUsed);
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 石像鬼查验`;
+
+    const alive = getAlivePlayers().filter(p => p.id !== gargoyle.id);
+    const cards = alive.map(p => playerCardHtml(p, 'gargoyleCheck')).join('');
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge night">🌙 石像鬼查验</span>
+        </div>
+        <div class="info-box">
+            <div>🗿 石像鬼请睁眼</div>
+            <div>选择1名玩家查验，上帝会告知其具体角色</div>
+            ${mistActive ? '<div style="color:var(--accent-purple)">🌫️ 注意：迷雾生效中</div>' : ''}
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;"
+            >🗿 选择查验目标：</div>
+        <div class="player-grid">${cards}</div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="confirmGargoyleCheck()"
+            >✓ 确认查验</button>
+    `;
+}
+
+function selectGargoyleCheck(id) {
+    selectTarget(id, 'gargoyleCheck');
+}
+
+function confirmGargoyleCheck() {
+    const gargoyle = getAlivePlayers().find(p => p.roleKey === 'gargoyle');
+    if (gameState.gargoyleCheckTarget === null) {
+        showNightWitch();
+        return;
+    }
+
+    const target = getPlayerById(gameState.gargoyleCheckTarget);
+    gargoyle.gargoyleCheckedIds.add(target.id);
+
+    const frameUpActive = target.hasCard && target.card.id === 'FRAME_UP' && !target.cardUsed;
+    const mistActive = getAlivePlayers().some(p => p.hasCard && p.card.id === 'MIST' && !p.cardUsed);
+
+    let resultRole;
+    if (mistActive) {
+        const allRoles = ['villager', 'werewolf', 'prophet', 'witch', 'gargoyle'];
+        resultRole = ROLE[allRoles[Math.floor(Math.random() * allRoles.length)].toUpperCase()];
+        log(`🗿 石像鬼查验 ${target.name} → ${resultRole.name} (迷雾干扰)`, 'wolf');
+    } else if (frameUpActive) {
+        resultRole = ROLE.VILLAGER;
+        log(`🗿 石像鬼查验 ${target.name} → ${resultRole.name} (嫁祸干扰)`, 'wolf');
+    } else {
+        resultRole = target.role;
+        log(`🗿 石像鬼查验 ${target.name} → ${resultRole.name}`, 'wolf');
+    }
+
+    gargoyle.gargoyleCheckResults[target.id] = resultRole;
+    gameState.selectedTarget = null;
+
+    showCheckResult('石像鬼', gargoyle.name, target.name, resultRole.name, resultRole.emoji);
+}
+
+function showCheckResult(checkerType, checkerName, targetName, resultName, resultEmoji) {
+    document.getElementById('game-content').innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:20px;">
+            <div style="font-size:18px;color:var(--text-dim);margin-bottom:12px;">${checkerType} (${checkerName}) 查验结果</div>
+            <div style="font-size:80px;margin:20px 0;">${resultEmoji}</div>
+            <div style="font-size:28px;font-weight:800;color:var(--accent-yellow);">${targetName} 是</div>
+            <div style="font-size:32px;font-weight:800;color:var(--accent-green);margin-top:8px;">${resultName}</div>
+            <div style="font-size:14px;color:var(--text-dim);margin-top:20px;">仅${checkerType}知晓此信息</div>
+        </div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="nextNightStep()"
+            >✓ 确认并继续</button>
+    `;
+}
+
+function nextNightStep() {
+    // 根据当前状态决定下一步
+    if (gameState.prophetCheckTarget !== null && gameState.gargoyleCheckTarget === null) {
+        // 预言家查验已完成，进入石像鬼查验
+        showNightGargoyleCheck();
+    } else {
+        // 都完成了，进入女巫
+        showNightWitch();
+    }
+}
+
+// 女巫用药
+function showNightWitch() {
+    const witch = getAlivePlayers().find(p => p.roleKey === 'witch');
+    if (!witch || witch.skillSealed) {
+        processNightDeaths();
+        return;
+    }
+
+    // 确定死亡名单（狼人刀杀 + 石像鬼刀杀）
+    const deaths = new Set();
+    if (gameState.nightKillTarget !== null) deaths.add(gameState.nightKillTarget);
+    if (gameState.gargoyleKillTarget !== null) deaths.add(gameState.gargoyleKillTarget);
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 女巫用药`;
+
+    let deathInfo = '';
+    if (deaths.size > 0) {
+        const names = Array.from(deaths).map(id => getPlayerById(id).name).join('、');
+        deathInfo = `<div style="font-size:18px;font-weight:700;color:var(--accent-red);margin-bottom:16px;"
+            >💀 今晚死亡：${names}</div>`;
+    } else {
+        deathInfo = `<div style="font-size:18px;font-weight:700;color:var(--accent-green);margin-bottom:16px;"
+            >🌟 今晚平安，无人死亡</div>`;
+    }
+
+    // 判断女巫是否能自救
+    const witchDying = deaths.has(witch.id);
+    const canSelfSave = CONFIG_5.witchCanSelfSave && witchDying && !witch.selfSaveUsed;
+    const canCure = witch.cureUsed < 1 && !witchDying; // 不能自救（5人局）
+    const canPoison = witch.poisonUsed < 1;
+
+    let buttons = '';
+    if (canSelfSave) {
+        buttons += `<button class="btn btn-primary btn-block" style="margin-bottom:10px;" onclick="witchAction('selfsave')"
+            >💊 自救（不消耗解药）</button>`;
+    }
+    if (canCure && deaths.size > 0) {
+        buttons += `<button class="btn btn-primary btn-block" style="margin-bottom:10px;" onclick="witchAction('cure')"
+            >💊 使用解药救人</button>`;
+    }
+    if (canPoison) {
+        buttons += `<button class="btn btn-danger btn-block" style="margin-bottom:10px;" onclick="witchSelectPoison()"
+            >🧪 使用毒药毒人</button>`;
+    }
+    buttons += `<button class="btn btn-ghost btn-block" onclick="witchAction('skip')"
+        >⏭️ 什么都不做</button>`;
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge night">🌙 女巫用药</span>
+        </div>
+        ${deathInfo}
+        <div class="info-box">
+            <div>✨ 女巫请睁眼</div>
+            <div>解药剩余：${1 - witch.cureUsed} 瓶 | 毒药剩余：${1 - witch.poisonUsed} 瓶</div>
+            ${!CONFIG_5.witchCanSelfSave ? '<div style="color:var(--accent-red)">⚠️ 5人局女巫不能自救</div>' : ''}
+        </div>
+        <div style="margin-top:16px;">${buttons}</div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = '';
+}
+
+function witchAction(action) {
+    const witch = getAlivePlayers().find(p => p.roleKey === 'witch');
+
+    if (action === 'selfsave') {
+        gameState.witchSelfSave = true;
+        witch.selfSaveUsed = true;
+        log(`✨ 女巫 ${witch.name} 自救（不消耗解药）`, 'good');
+        processNightDeaths();
+    } else if (action === 'cure') {
+        gameState.witchCure = true;
+        witch.cureUsed += 1;
+        log(`✨ 女巫 ${witch.name} 使用解药救人`, 'good');
+        processNightDeaths();
+    } else if (action === 'skip') {
+        log(`✨ 女巫选择什么都不做`, 'info');
+        processNightDeaths();
+    }
+}
+
+function witchSelectPoison() {
+    const alive = getAlivePlayers();
+    const cards = alive.map(p => playerCardHtml(p, 'witchPoison')).join('');
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge night">🌙 女巫毒人</span>
+        </div>
+        <div class="info-box">
+            <div>🧪 选择要毒杀的目标</div>
+            <div>被毒死的人无法被救，猎人被毒不能开枪</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;"
+            >🧪 选择毒杀目标：</div>
+        <div class="player-grid">${cards}</div>
+        <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-block btn-sm" onclick="showNightWitch()"
+                >← 返回</button>
+        </div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-danger btn-block" onclick="confirmWitchPoison()"
+            >🧪 确认毒杀</button>
+    `;
+}
+
+function selectWitchPoison(id) {
+    selectTarget(id, 'witchPoison');
+}
+
+function confirmWitchPoison() {
+    if (gameState.witchPoisonTarget === null) {
+        showNightWitch();
+        return;
+    }
+    const witch = getAlivePlayers().find(p => p.roleKey === 'witch');
+    const target = getPlayerById(gameState.witchPoisonTarget);
+    witch.poisonUsed += 1;
+    gameState.witchPoison = true;
+    log(`🧪 女巫 ${witch.name} 毒杀 ${target.name}`, 'good');
+    gameState.selectedTarget = null;
+    processNightDeaths();
+}
+
+// =====================================================
+// 死亡处理
+// =====================================================
+
+function processNightDeaths() {
+    const deaths = new Set();
+    const causes = {};
+
+    // 狼人刀杀
+    if (gameState.nightKillTarget !== null) {
+        deaths.add(gameState.nightKillTarget);
+        causes[gameState.nightKillTarget] = 'knife';
+    }
+    // 石像鬼刀杀
+    if (gameState.gargoyleKillTarget !== null) {
+        deaths.add(gameState.gargoyleKillTarget);
+        causes[gameState.gargoyleKillTarget] = 'knife';
+    }
+    // 女巫毒杀
+    if (gameState.witchPoison && gameState.witchPoisonTarget !== null) {
+        deaths.add(gameState.witchPoisonTarget);
+        causes[gameState.witchPoisonTarget] = 'poison';
+    }
+
+    // 女巫自救
+    const witch = gameState.players.find(p => p.roleKey === 'witch');
+    if (gameState.witchSelfSave && witch) {
+        deaths.delete(witch.id);
+        delete causes[witch.id];
+    }
+    // 女巫救人
+    if (gameState.witchCure) {
+        // 救第一个死亡的（如果有）
+        const firstDeath = Array.from(deaths)[0];
+        if (firstDeath !== undefined) {
+            deaths.delete(firstDeath);
+            delete causes[firstDeath];
+        }
+    }
+
+    // 处理死亡
+    const actualDeaths = [];
+    for (const pid of deaths) {
+        const player = getPlayerById(pid);
+
+        // 检查免疫
+        if (player.immuneTonight) {
+            log(`🛡️ ${player.name} 免疫死亡`, 'good');
+            continue;
+        }
+
+        // 检查替身傀儡
+        if (player.hasCard && player.card.id === 'DECOY' && !player.cardUsed && causes[pid] === 'knife') {
+            const others = getAlivePlayers().filter(p => p.id !== pid);
+            if (others.length > 0) {
+                const decoyTarget = others[Math.floor(Math.random() * others.length)];
+                player.cardUsed = true;
+                log(`🎎 ${player.name} 的替身傀儡生效，死亡转移到 ${decoyTarget.name}`, 'good');
+                deaths.add(decoyTarget.id);
+                causes[decoyTarget.id] = 'knife';
+                continue;
+            }
+        }
+
+        // 检查九命猫
+        if (player.hasCard && player.card.id === 'NINE_LIVES' && !player.nineLivesUsed) {
+            if (Math.random() < 0.5) {
+                player.nineLivesUsed = true;
+                player.cardUsed = true;
+                log(`🐱 ${player.name} 的九命猫生效，复活！`, 'good');
+                continue;
+            }
+        }
+
+        // 确认死亡
+        player.alive = false;
+        actualDeaths.push(pid);
+        log(`💀 ${player.name} 死亡`, 'info');
+    }
+
+    gameState.deathsTonight = new Set(actualDeaths);
+    gameState.deathCauses = causes;
+
+    // 检查胜利
+    if (checkVictory()) return;
+
+    // 进入白天
+    startDayPhase();
+}
+
+// =====================================================
+// 白天阶段
+// =====================================================
+
+function startDayPhase() {
+    gameState.phase = PHASE.DAY;
+    gameState.dayNumber += 1;
+
+    log(`======== 第${gameState.dayNumber}天 ========`, 'info');
+
+    const deaths = Array.from(gameState.deathsTonight);
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}天 · 白天`;
+
+    let dawnHtml;
+    if (deaths.length > 0) {
+        const names = deaths.map(id => getPlayerById(id).name).join('、');
+        dawnHtml = `
+            <div class="dawn-card killed">
+                <div style="font-size:44px;margin-bottom:10px;">💀</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent-red);">${names}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">在昨晚去世了</div>
+            </div>
+        `;
+    } else {
+        dawnHtml = `
+            <div class="dawn-card safe">
+                <div style="font-size:44px;margin-bottom:10px;">🌟</div>
+                <div style="font-size:20px;font-weight:800;color:var(--accent-green);">平安夜</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">昨晚无人死亡</div>
+            </div>
+        `;
+    }
+
+    // 检查胜利
+    if (checkVictory()) return;
+
+    // 预言家公开指认（如果有查到狼）
+    const prophet = gameState.players.find(p => p.roleKey === 'prophet');
+    let accusationHtml = '';
+    if (prophet && prophet.alive && prophet.checkResults) {
+        const wolves = Object.entries(prophet.checkResults).filter(([id, role]) =>
+            role.key === 'werewolf' || role.key === 'gargoyle'
+        );
+        if (wolves.length > 0 && Math.random() < 0.7) {
+            const [accusedId] = wolves[0];
+            const accused = getPlayerById(parseInt(accusedId));
+            if (accused && accused.alive) {
+                gameState.publicAccusation = parseInt(accusedId);
+                log(`🌙 预言家 ${prophet.name} 公开指认 ${accused.name} 是狼人`, 'good');
+                accusationHtml = `
+                    <div class="alert-box">
+                        <div class="title">🌙 预言家指认</div>
+                        <div class="text">预言家指认 ${accused.name} 是狼人阵营</div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge day">☀️ 第${gameState.dayNumber}天</span>
+        </div>
+        ${dawnHtml}
+        ${accusationHtml}
+        <div class="stat-row">
+            <div class="stat-chip">存活 <strong>${getAlivePlayers().length}</strong> 人</div>
+        </div>
+        <div class="info-box" style="margin-top:16px;">
+            <div>🗣️ 请开始白天讨论</div>
+            <div>💡 死亡玩家身份不公开，可发表30秒遗言</div>
+        </div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="startVotePhase()"
+            >🗳️ 开始投票</button>
+    `;
+}
+
+// =====================================================
+// 投票阶段
+// =====================================================
+
+function startVotePhase() {
+    gameState.phase = PHASE.VOTE;
+    gameState.voteMap = {};
+    gameState.voterIndex = 0;
+
+    // 应用白天特权卡效果
+    applyDayCards();
+
+    // 真相揭露
+    const revealHolder = getAlivePlayers().find(p =>
+        p.hasCard && p.card.id === 'REVEAL' && !p.cardUsed
+    );
+    if (revealHolder) {
+        const targets = getAlivePlayers().filter(p => p.id !== revealHolder.id);
+        if (targets.length > 0) {
+            const revealed = targets[Math.floor(Math.random() * targets.length)];
+            revealHolder.cardUsed = true;
+            log(`🔍 【真相揭露】${revealed.name} 的真实身份是 ${revealed.role.name} (${revealed.alignment === ALIGNMENT.GOOD ? '好人' : '狼人'})`, 'info');
+            showRevealModal(revealed);
+            return;
+        }
+    }
+
+    showNextVoter();
+}
+
+function showRevealModal(revealed) {
+    document.getElementById('game-content').innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:20px;">
+            <div style="font-size:18px;color:var(--accent-yellow);font-weight:700;margin-bottom:16px;"
+                >🔍 真相揭露</div>
+            <div style="font-size:80px;margin:20px 0;">${revealed.role.emoji}</div>
+            <div style="font-size:24px;font-weight:800;">${revealed.name}</div>
+            <div style="font-size:20px;color:var(--accent-yellow);margin-top:8px;"
+                >${revealed.role.name}</div>
+            <div style="font-size:16px;color:${revealed.alignment === ALIGNMENT.GOOD ? 'var(--accent-green)' : 'var(--accent-red)'};margin-top:8px;"
+                >${revealed.alignment === ALIGNMENT.GOOD ? '好人阵营' : '狼人阵营'}</div>
+            <div style="font-size:14px;color:var(--text-dim);margin-top:20px;"
+                >全场可见此信息</div>
+        </div>
+    `;
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="showNextVoter()"
+            >✓ 继续投票</button>
+    `;
+}
+
+function applyDayCards() {
+    getAlivePlayers().forEach(p => {
+        if (!p.hasCard || p.cardUsed) return;
+        const card = p.card;
+
+        if (card.id === 'SILENCE_SEAL') {
+            p.silencedToday = true;
+            p.cardUsed = true;
+            log(`🤐 ${p.name} 被沉默之印封印，无法投票`, 'wolf');
+        } else if (card.id === 'HALF_VOTE') {
+            p.votePower = 0.5;
+            p.cardUsed = true;
+            log(`⚖️ ${p.name} 受半票权影响，投票权变为0.5`, 'wolf');
+        } else if (card.id === 'NO_SKILL') {
+            p.skillSealed = true;
+            p.cardUsed = true;
+            log(`🔒 ${p.name} 受技能封印影响`, 'wolf');
+        } else if (card.id === 'JUDGMENT') {
+            p.votePower = 3.0;
+            p.cardUsed = true;
+            log(`⚡ ${p.name} 使用审判日，投票权×3`, 'good');
+        }
+    });
+}
+
+function showNextVoter() {
+    const alive = getAlivePlayers();
+    if (gameState.voterIndex >= alive.length) {
+        // 所有玩家投票完成
+        tallyVotes();
+        return;
+    }
+
+    const voter = alive[gameState.voterIndex];
+
+    // 检查沉默
+    if (voter.silencedToday) {
+        log(`🤐 ${voter.name} 被沉默，跳过投票`, 'info');
+        gameState.voterIndex++;
+        showNextVoter();
+        return;
+    }
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}天 · 投票`;
+
+    const targets = alive.filter(p => p.id !== voter.id);
+    const cards = targets.map(p => `
+        <div class="vote-candidate" id="vote-${p.id}" onclick="selectVoteTarget(${voter.id}, ${p.id})"
+            style="${gameState.voteMap[p.id] ? 'opacity:0.5;' : ''}">
+            <div class="player-avatar" style="font-size:28px;">${p.gender === 'female' ? '👩' : '👨'}</div>
+            <div>
+                <div style="font-size:15px;font-weight:600;">${p.name}</div>
+                <div style="font-size:12px;color:var(--text-dim);">当前 ${gameState.voteMap[p.id] || 0} 票</div>
+            </div>
+        </div>
+    `).join('');
+
+    const weightText = voter.votePower !== 1.0 ? ` (权重: ${voter.votePower})` : '';
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge day">🗳️ 投票阶段</span>
+        </div>
+        <div class="info-box">
+            <div>请把设备交给 ${voter.name}</div>
+            <div>投票权重：${voter.votePower}${weightText}</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;"
+            >选择要放逐的玩家：</div>
+        ${cards}
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="confirmVote(${voter.id})"
+            >✓ ${voter.name} 投票</button>
+    `;
+}
+
+function selectVoteTarget(voterId, targetId) {
+    gameState.selectedTarget = targetId;
+    document.querySelectorAll('.vote-candidate').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`vote-${targetId}`).classList.add('selected');
+}
+
+function confirmVote(voterId) {
+    if (gameState.selectedTarget === null) {
+        alert('请先选择投票目标');
+        return;
+    }
+
+    const voter = getPlayerById(voterId);
+    const targetId = gameState.selectedTarget;
+
+    // 计算票数（含搅局者加成）
+    let votes = voter.votePower;
+    if (voter.hasCard && voter.card.id === 'DISRUPTOR' && !voter.cardUsed) {
+        votes += 2.0;
+        voter.cardUsed = true;
+        log(`🌀 ${voter.name} 的搅局者生效，${getPlayerById(targetId).name} 额外+2票（不公开）`, 'wolf');
+    }
+
+    gameState.voteMap[targetId] = (gameState.voteMap[targetId] || 0) + votes;
+    log(`🗳️ ${voter.name} 投票给 ${getPlayerById(targetId).name} (${votes}票)`, 'info');
+
+    gameState.selectedTarget = null;
+    gameState.voterIndex++;
+    showNextVoter();
+}
+
+function tallyVotes() {
+    const votes = gameState.voteMap;
+    const entries = Object.entries(votes);
+
+    if (entries.length === 0) {
+        log(`无人投票，跳过放逐`, 'info');
+        startNightPhase();
+        return;
+    }
+
+    const maxVotes = Math.max(...entries.map(([_, v]) => v));
+    const candidates = entries.filter(([_, v]) => v === maxVotes).map(([id, _]) => parseInt(id));
+
+    // 平票随机
+    const votedOutId = candidates[Math.floor(Math.random() * candidates.length)];
+    const votedOut = getPlayerById(votedOutId);
+
+    log(`📢 ${votedOut.name} 被放逐 (${maxVotes}票)`, 'info');
+
+    // 放逐
+    votedOut.alive = false;
+
+    // 显示结果
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;padding:20px 0;">
+            <span class="phase-badge day">☀️ 投票结果</span>
+            <div class="dawn-card killed" style="margin-top:16px;">
+                <div style="font-size:44px;margin-bottom:10px;">⚖️</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent-red);">${votedOut.name}</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">被放逐出局</div>
+                <div style="font-size:13px;color:var(--text-dim);margin-top:6px;">获得 ${maxVotes} 票</div>
+            </div>
+            <div class="info-box" style="margin-top:16px;">
+                <div>💬 ${votedOut.name} 发表30秒遗言</div>
+                <div>🔒 身份不公开</div>
+            </div>
+        </div>
+    `;
+
+    // 检查猎人开枪
+    if (votedOut.roleKey === 'hunter' && votedOut.canShoot) {
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-danger btn-block" onclick="hunterShoot(${votedOut.id})"
+                >🔫 猎人开枪</button>
+            <button class="btn btn-ghost btn-block" onclick="afterHunterShoot()"
+                style="margin-top:8px;"
+                >⏭️ 猎人不开枪</button>
+        `;
+    } else {
+        document.getElementById('game-bottom-bar').innerHTML = `
+            <button class="btn btn-primary btn-block" onclick="afterVote()"
+                >✓ 继续</button>
+        `;
+    }
+}
+
+function hunterShoot(hunterId) {
+    const hunter = getPlayerById(hunterId);
+    const alive = getAlivePlayers().filter(p => p.id !== hunterId);
+
+    if (alive.length === 0) {
+        afterHunterShoot();
+        return;
+    }
+
+    const cards = alive.map(p => playerCardHtml(p, 'hunterShoot')).join('');
+
+    document.getElementById('game-content').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <span class="phase-badge day">🔫 猎人开枪</span>
+        </div>
+        <div class="info-box">
+            <div>${hunter.name} (猎人) 被放逐</div>
+            <div>选择要开枪带走的目标</div>
+        </div>
+        <div class="player-grid">${cards}</div>
+    `;
+
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-danger btn-block" onclick="confirmHunterShoot(${hunterId})"
+            >🔫 确认开枪</button>
+    `;
+}
+
+function selectHunterShoot(id) {
+    selectTarget(id, 'hunterShoot');
+}
+
+function confirmHunterShoot(hunterId) {
+    if (gameState.selectedTarget === null) {
+        afterHunterShoot();
+        return;
+    }
+    const hunter = getPlayerById(hunterId);
+    const target = getPlayerById(gameState.selectedTarget);
+    target.alive = false;
+    hunter.canShoot = false;
+    log(`🔫 猎人 ${hunter.name} 开枪带走 ${target.name}`, 'info');
+    gameState.selectedTarget = null;
+
+    // 检查被带走的也是猎人
+    if (target.roleKey === 'hunter' && target.canShoot) {
+        hunterShoot(target.id);
+    } else {
+        afterHunterShoot();
+    }
+}
+
+function afterHunterShoot() {
+    if (checkVictory()) return;
+    startNightPhase();
+}
+
+function afterVote() {
+    if (checkVictory()) return;
+    startNightPhase();
+}
+
+// =====================================================
+// 胜利判定
+// =====================================================
+
+function checkVictory() {
+    const alive = getAlivePlayers();
+    const goodAlive = alive.filter(p => p.alignment === ALIGNMENT.GOOD).length;
+    const wolfAlive = alive.filter(p => p.alignment === ALIGNMENT.WOLF).length;
+
+    // 狼人全灭（普通狼人+石像鬼都死）
+    const allWolvesDead = gameState.players.filter(p =>
+        p.alignment === ALIGNMENT.WOLF && !p.alive
+    ).length === 2; // 5人局固定2狼
+
+    if (allWolvesDead) {
+        gameState.winner = ALIGNMENT.GOOD;
+        showResult();
+        return true;
+    }
+
+    if (goodAlive === 0) {
+        gameState.winner = ALIGNMENT.WOLF;
+        showResult();
+        return true;
+    }
+
+    return false;
+}
+
+// =====================================================
+// 结果界面
+// =====================================================
+
+function showResult() {
+    showScreen('screen-result');
+
+    const isGoodWin = gameState.winner === ALIGNMENT.GOOD;
+    const winnerText = isGoodWin ? '好人阵营胜利！' : '狼人阵营胜利！';
+    const winnerClass = isGoodWin ? 'good' : 'wolf';
+    const winnerEmoji = isGoodWin ? '🎉' : '🐺';
+
+    const revealCards = gameState.players.map(p => `
+        <div class="reveal-card">
+            <div class="emoji">${p.role.emoji}</div>
+            <div class="name">${p.name}</div>
+            <div class="role">${p.role.name} ${p.alive ? '✅' : '💀'}</div>
+        </div>
+    `).join('');
+
+    document.getElementById('result-content').innerHTML = `
+        <div class="result-winner ${winnerClass}">${winnerEmoji} ${winnerText}</div>
+        <div class="card-title">身份揭晓</div>
+        <div class="reveal-all-grid">${revealCards}</div>
+        <div class="info-box" style="margin-top:20px;">
+            <div>📊 本局统计</div>
+            <div>持续天数：${gameState.dayNumber} 天</div>
+            <div>存活人数：${getAlivePlayers().length} / 5</div>
+        </div>
+    `;
+}
+
+// =====================================================
+// 规则说明
+// =====================================================
+
+function showRules() {
+    const content = `
+        <div class="modal-title">📖 游戏规则</div>
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchRuleTab(this, 'roles')"">角色</button>
+            <button class="tab-btn" onclick="switchRuleTab(this, 'flow')"">流程</button>
+            <button class="tab-btn" onclick="switchRuleTab(this, 'cards')"">特权卡</button>
+        </div>
+        <div id="rule-roles" class="rules-section">
+            <h3>角色配置（5人局）</h3>
+            <div class="config-item"><div class="config-role">🗿 石像鬼</div><div>狼人阵营</div></div>
+            <div class="config-item"><div class="config-role">🐺 普通狼人</div><div>狼人阵营</div></div>
+            <div class="config-item"><div class="config-role">🌙 预言家</div><div>好人阵营</div></div>
+            <div class="config-item"><div class="config-role">✨ 女巫</div><div>好人阵营</div></div>
+            <div class="config-item"><div class="config-role">👨 村民</div><div>好人阵营</div></div>
+            <h3 style="margin-top:16px;">关键规则</h3>
+            <ul>
+                <li>预言家和石像鬼查验知道具体角色</li>
+                <li>石像鬼与普通狼人互不知晓身份</li>
+                <li>5人局女巫不能自救</li>
+                <li>死亡玩家身份永远不公开</li>
+                <li>好人投票权重1.10</li>
+            </ul>
+        </div>
+        <div id="rule-flow" class="rules-section" style="display:none;">
+            <h3>夜晚流程</h3>
+            <ol>
+                <li>石像鬼觉醒检查</li>
+                <li>普通狼人刀人（石像鬼不参与）</li>
+                <li>觉醒石像鬼刀人</li>
+                <li>预言家查验</li>
+                <li>石像鬼查验</li>
+                <li>女巫用药</li>
+                <li>死亡结算</li>
+            </ol>
+            <h3>白天流程</h3>
+            <ol>
+                <li>公布死亡</li>
+                <li>遗言（30秒，身份不公开）</li>
+                <li>发言讨论</li>
+                <li>投票放逐</li>
+                <li>被放逐者遗言</li>
+            </ol>
+            <h3>胜利条件</h3>
+            <ul>
+                <li>好人胜：所有狼人死亡</li>
+                <li>狼人胜：所有好人死亡</li>
+            </ul>
+        </div>
+        <div id="rule-cards" class="rules-section" style="display:none;">
+            <h3>狼人卡池（维持平衡）</h3>
+            <div class="card-grid-2">
+                ${Object.values(PRIVILEGE_CARDS).filter(c => c.type === 'wolf_balance').map(c => `
+                    <div class="mini-card">
+                        <div class="emoji">${c.emoji}</div>
+                        <div class="name">${c.name}</div>
+                        <div class="desc">${c.desc}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <h3 style="margin-top:16px;">好人卡池-维持平衡</h3>
+            <div class="card-grid-2">
+                ${Object.values(PRIVILEGE_CARDS).filter(c => c.type === 'good_balance').map(c => `
+                    <div class="mini-card">
+                        <div class="emoji">${c.emoji}</div>
+                        <div class="name">${c.name}</div>
+                        <div class="desc">${c.desc}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <h3 style="margin-top:16px;">好人卡池-打破平衡</h3>
+            <div class="card-grid-2">
+                ${Object.values(PRIVILEGE_CARDS).filter(c => c.type === 'good_break').map(c => `
+                    <div class="mini-card">
+                        <div class="emoji">${c.emoji}</div>
+                        <div class="name">${c.name}</div>
+                        <div class="desc">${c.desc}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    showModal(content);
+}
+
+function switchRuleTab(btn, tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.rules-section').forEach(s => s.style.display = 'none');
+    document.getElementById('rule-' + tab).style.display = 'block';
+}
+
+function confirmQuit() {
+    if (confirm('确定要退出当前游戏吗？')) {
+        resetGame();
+    }
+}
+
+// =====================================================
+// 初始化
+// =====================================================
+
+renderNameInputs();
+</script>
+</body>
+</html>
