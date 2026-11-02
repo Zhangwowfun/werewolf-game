@@ -948,12 +948,12 @@ const PRIVILEGE_CARDS = {
     MIST: { id: 'MIST', name: '迷雾', emoji: '🌫️', type: 'wolf_balance', desc: '当晚所有人查验结果显示为随机角色' },
     // 特权卡池二
     DOUBLE_VOTE: { id: 'DOUBLE_VOTE', name: '双票权', emoji: '🗳️', type: 'good_balance', desc: '目标投票权变为2' },
-    IMMUNITY: { id: 'IMMUNITY', name: '免疫卡', emoji: '🛡️', type: 'good_balance', desc: '目标当晚免疫死亡' },
+    IMMUNITY: { id: 'IMMUNITY', name: '免疫卡', emoji: '🛡️', type: 'good_balance', desc: '只挡当晚的刀、毒和夜间猎枪，不挡白天放逐和白天枪击' },
     RESCUE: { id: 'RESCUE', name: '紧急救援', emoji: '💊', type: 'good_balance', desc: '女巫持有时，自己额外获得1瓶解药' },
     POISON: { id: 'POISON', name: '额外毒药', emoji: '🧪', type: 'good_balance', desc: '女巫持有时，自己额外获得1瓶毒药' },
     CRITICAL_HIT: { id: 'CRITICAL_HIT', name: '致命一击', emoji: '💥', type: 'good_balance', desc: '目标投票权乘3' },
     DECOY: { id: 'DECOY', name: '替身傀儡', emoji: '🎎', type: 'good_balance', desc: '仅夜间刀杀时转移到随机其他存活玩家；转移后仍受免疫、守护和解药保护，同时中毒不转移' },
-    MIND_READ: { id: 'MIND_READ', name: '心声聆听', emoji: '👂', type: 'good_balance', desc: '知道昨晚谁查验了你' },
+    MIND_READ: { id: 'MIND_READ', name: '心声聆听', emoji: '👂', type: 'good_balance', desc: '本夜被查验的人会得知是谁查验了自己' },
     // 特权卡池三
     REVEAL: { id: 'REVEAL', name: '真相揭露', emoji: '🔍', type: 'good_break', desc: '白天公开目标真实身份和阵营' },
     NINE_LIVES: { id: 'NINE_LIVES', name: '九命猫', emoji: '🐱', type: 'good_break', desc: '目标遭刀杀、毒杀、放逐或猎人枪击时50%概率免死，每名目标整局限尝试1次，无论成功失败都消耗' },
@@ -1044,7 +1044,7 @@ const DEFAULT_GAME_TEXT = {
     'rules.opening.identity': '特权卡处理完成后，所有玩家依次私下翻牌查看身份，最后进入第一夜。',
     'rules.witch': '女巫用药：5人局不能自救；6人及以上可自救1次且不消耗解药。毒药可选择自己；同夜救毒按设置的房规执行。',
     'rules.guardian': '守卫守护：只挡刀杀，不挡毒药或猎人枪击；不能连续两晚守同一人，空守一晚后可以再守原目标。',
-    'rules.mindRead': '心声聆听的目标私下查看当夜查验者信息，再统一结算夜间死亡。',
+    'rules.mindRead': '心声聆听：本夜被查验的人会得知是谁查验了自己，再统一结算夜间死亡。',
     'rules.voteTie': '按本局基础票权和特权效果计票；平票依房规随机放逐，或在平票者中重投一轮，仍平票再随机。',
     'rules.hunter': '出局者有30秒遗言，并私下确认出局操作；猎人选择开枪才公开行动，枪杀的玩家同样有遗言和出局操作。',
     'rules.win': '只在一方全员死亡后结算，不根据人数或技能估算提前结束。',
@@ -1148,9 +1148,10 @@ const DEFAULT_GAME_TEXT = {
     'night.transition.rule2': '倒计时结束后，系统会自动进入白天。',
     'night.transition.skip': '跳过等待，进入白天',
     'night.timer.label': '本阶段倒计时',
-    'night.timer.note': '倒计时结束后自动进入下一阶段，也可以直接继续。',
+    'night.timer.note': '倒计时结束会停在本阶段，已选目标会保留。请点击确认，或点「直接继续」。',
     'night.timer.wait': '请按流程等待，本阶段固定保留，避免通过流程判断角色状态。',
     'night.timer.skip': '⏭️ 直接继续',
+    'night.role.handoff': '请把设备交给 {name}',
     'night.wolf.phase': '🌙 狼人行动',
     'night.wolf.prompt': '🐺 狼人请睁眼，私下讨论后选择杀人目标',
     'night.wolf.note': '🗿 石像鬼不参与普通狼人杀人',
@@ -1159,7 +1160,7 @@ const DEFAULT_GAME_TEXT = {
     'night.wolf.confirm': '✓ 确认杀人',
     'night.gargoyleKill.phase': '🌙 石像鬼杀人',
     'night.gargoyleKill.title': '🗿 石像鬼行动',
-    'night.gargoyleKill.prompt': '{name} 获得杀人能力，请选择杀人目标',
+    'night.gargoyleKill.prompt': '石像鬼请依照规则操作',
     'night.gargoyleKill.target': '🗿 选择杀人目标：',
     'night.gargoyleKill.skip': '✦ 不杀人',
     'night.gargoyleKill.confirm': '✓ 确认',
@@ -1174,11 +1175,11 @@ const DEFAULT_GAME_TEXT = {
     'night.gargoyleCheck.target': '🗿 选择查验目标：',
     'night.gargoyleCheck.confirm': '✓ 确认查验',
     'night.witch.phase': '🌙 女巫用药',
-    'night.witch.prompt': '✨ 请 {name}（女巫）睁眼',
+    'night.witch.prompt': '女巫请睁眼，烛火微明，请决定是否使用药水。',
     'night.witch.confirm': '✓ 确认 {name} 的行动',
     'night.witch.skip': '⏭️ 什么都不做',
     'night.guardian.phase': '🌙 守卫守护',
-    'night.guardian.prompt': '🛡️ 请 {name}（守卫）睁眼',
+    'night.guardian.prompt': '守卫请睁眼。愿长夜有光，请选择今晚守护的人。',
     'night.guardian.note': '选择今晚守护的玩家；不能连续两晚守同一人。',
     'night.guardian.confirm': '✓ 确认守护',
     'night.guardian.skip': '⏭️ 不守护',
@@ -1783,6 +1784,8 @@ function nextGodVoiceLine(key, data = {}) {
 }
 
 let godVoiceAudio = null;
+let godVoicePlaybackToken = 0;
+let gameOpeningId = 0;
 
 const GOD_VOICE_FILES = {
     voiceOn: 'voiceOn',
@@ -1809,9 +1812,10 @@ function godVoiceFile(key, data = {}) {
 }
 
 function stopGodVoicePlayback() {
+    godVoicePlaybackToken += 1;
     if (godVoiceAudio) {
+        try { godVoiceAudio.onended = null; } catch (error) { /* 播放器已释放时忽略。 */ }
         try { godVoiceAudio.pause(); } catch (error) { /* 播放器已释放时忽略。 */ }
-        godVoiceAudio = null;
     }
     if (typeof window !== 'undefined' && window.speechSynthesis
         && typeof window.speechSynthesis.cancel === 'function') {
@@ -1819,28 +1823,91 @@ function stopGodVoicePlayback() {
     }
 }
 
-function speakGodLine(key, data = {}) {
-    if (!godVoiceEnabled || typeof window === 'undefined') return;
-    const file = godVoiceFile(key, data);
-    if (file && typeof Audio === 'function') {
-        stopGodVoicePlayback();
-        try {
-            const audio = new Audio(`audio/god/${file}.mp3`);
-            godVoiceAudio = audio;
-            const played = audio.play();
-            if (played && typeof played.catch === 'function') played.catch(() => {});
-            return;
-        } catch (error) { /* 录音打不开时改用系统朗读。 */ }
+function ensureGodVoiceAudio() {
+    if (!godVoiceAudio) godVoiceAudio = new Audio();
+    return godVoiceAudio;
+}
+
+function recordedGodVoiceLine(key, data = {}) {
+    const template = DEFAULT_GAME_TEXT[`voice.${key}`];
+    if (typeof template !== 'string' || !template.trim()) return '';
+    return formatText(template.trim(), data);
+}
+
+function speakUtterance(line, finish) {
+    if (!line || typeof window === 'undefined' || !window.speechSynthesis
+        || typeof SpeechSynthesisUtterance === 'undefined') {
+        finish();
+        return;
     }
-    if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return;
-    const line = nextGodVoiceLine(key, data);
-    if (!line) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(line);
-    utterance.lang = 'zh-CN';
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    window.speechSynthesis.speak(utterance);
+    try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(line);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+        utterance.onend = () => finish();
+        utterance.onerror = () => finish();
+        window.speechSynthesis.speak(utterance);
+    } catch (error) {
+        finish();
+    }
+}
+
+function speakGodLine(key, data = {}, onDone) {
+    const finishNow = () => { if (typeof onDone === 'function') onDone(); };
+    if (!godVoiceEnabled || typeof window === 'undefined') {
+        finishNow();
+        return;
+    }
+    const file = godVoiceFile(key, data);
+    const canPlayAudio = Boolean(file) && typeof Audio === 'function';
+    const canSpeak = Boolean(window.speechSynthesis) && typeof SpeechSynthesisUtterance !== 'undefined';
+    if (!canPlayAudio && !canSpeak) {
+        finishNow();
+        return;
+    }
+    stopGodVoicePlayback();
+    const token = godVoicePlaybackToken;
+    let settled = false;
+    const finish = () => {
+        if (settled || token !== godVoicePlaybackToken) return;
+        settled = true;
+        if (typeof onDone === 'function') onDone();
+    };
+    if (canPlayAudio) {
+        try {
+            const audio = ensureGodVoiceAudio();
+            try { audio.pause(); } catch (error) { /* 同一播放器切句时忽略。 */ }
+            audio.onended = null;
+            audio.src = `audio/god/${file}.mp3`;
+            audio.onended = () => finish();
+            let played;
+            try {
+                played = audio.play();
+            } catch (error) {
+                audio.onended = null;
+                speakUtterance(recordedGodVoiceLine(key, data), finish);
+                return;
+            }
+            if (played && typeof played.catch === 'function') {
+                played.catch(() => {
+                    if (token !== godVoicePlaybackToken) return;
+                    try { audio.onended = null; } catch (error) { /* 播放器已释放时忽略。 */ }
+                    speakUtterance(recordedGodVoiceLine(key, data), finish);
+                });
+            }
+            return;
+        } catch (error) {
+            speakUtterance(recordedGodVoiceLine(key, data), finish);
+            return;
+        }
+    }
+    if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') {
+        finish();
+        return;
+    }
+    speakUtterance(nextGodVoiceLine(key, data), finish);
 }
 
 function clearLastWordsTimer() {
@@ -1925,7 +1992,7 @@ function showNightToDayTransition(seconds = 15) {
 
 function finishNightToDayTransition() {
     clearNightTransitionTimer();
-    startDayPhase();
+    beginNightHunterConfirmations();
 }
 
 function clearNightRoleTimer() {
@@ -2047,7 +2114,7 @@ function startNightRoleTimer(nextAction, seconds = NIGHT_ROLE_PHASE_SECONDS) {
     gameState.nightRoleTimerRemaining = restoredTimerSeconds('nightRoleTimerRemaining', seconds);
 
     renderNightRoleTimer();
-    if (gameState.nightRoleTimerRemaining <= 0 && nightRoleTimerHasPendingSelection()) {
+    if (gameState.nightRoleTimerRemaining <= 0) {
         holdNightRoleTimerForConfirm();
         return;
     }
@@ -2056,12 +2123,8 @@ function startNightRoleTimer(nextAction, seconds = NIGHT_ROLE_PHASE_SECONDS) {
         renderNightRoleTimer();
         if (gameState.nightRoleTimerRemaining > 0) saveGameSnapshot();
         if (gameState.nightRoleTimerRemaining <= 0) {
-            // 已经选了目标但还没点确认时不自动推进，避免动作被静默丢弃
-            if (nightRoleTimerHasPendingSelection()) {
-                holdNightRoleTimerForConfirm();
-                return;
-            }
-            finishNightRoleTimer();
+            // 到时只停表，保留已选目标；「直接继续」才放弃本动作。
+            holdNightRoleTimerForConfirm();
         }
     }, 1000);
 }
@@ -2082,7 +2145,7 @@ function nightRoleTimerHasPendingSelection() {
 }
 
 function holdNightRoleTimerForConfirm() {
-    // 停表等待确认：只停 interval，不清 nightRoleNextAction，"直接继续"按钮仍可用
+    // 停表等待确认：只停 interval，不清目标和 nightRoleNextAction，「直接继续」仍可用
     if (nightRoleTimerId) {
         clearInterval(nightRoleTimerId);
         nightRoleTimerId = null;
@@ -2091,7 +2154,7 @@ function holdNightRoleTimerForConfirm() {
     const countdown = document.getElementById('night-role-countdown');
     if (countdown) countdown.textContent = 0;
     const note = document.getElementById('night-role-timer-note');
-    if (note) note.textContent = '已选择目标，等待点击确认（或直接继续放弃本动作）。';
+    if (note) note.textContent = '倒计时已结束，等待点击确认，或点「直接继续」。';
     saveGameSnapshot();
 }
 
@@ -2216,6 +2279,7 @@ function gameResumeRenderers() {
         mindReadHandoff: () => showMindReadHandoff(),
         mindReadResult: () => showMindReadResult(),
         nightTransition: () => showNightToDayTransition(),
+        hunterNightHandoff: id => showNightHunterHandoff(id),
         dayOverview: () => renderDayOverview(),
         dayLastWords: () => showNextDayLastWords(),
         daySpeech: () => showNextDaySpeech(),
@@ -2992,6 +3056,13 @@ function showRoleReveal(index) {
     }
 }
 
+function identityRoleDesc(player) {
+    if (player.roleKey === 'prophet' && getConfig(gameState.playerCount).prophetImmuneNights <= 0) {
+        return '好人阵营。每晚查验1名玩家，知道该玩家的具体角色。';
+    }
+    return player.role.desc;
+}
+
 function flipCard(index) {
     const player = gameState.players[index];
     const card = document.getElementById('flip-card');
@@ -3012,7 +3083,7 @@ function flipCard(index) {
         inner.innerHTML = `
             ${roleImageHtml(player, 'role-image-big')}
             <div class="role-name-big">${player.role.name}</div>
-            <div class="role-desc-text">${player.role.desc}</div>
+            <div class="role-desc-text">${identityRoleDesc(player)}</div>
         `;
         card.classList.add('flipped');
         const continueBtn = document.getElementById('role-continue-btn');
@@ -3035,8 +3106,11 @@ function startGamePhase() {
     gameState.phase = PHASE.NIGHT;
     gameState.dayNumber = 1;
     acquireWakeLock();
-    speakGodLine('gameStart');
-    startNightPhase();
+    const openingId = ++gameOpeningId;
+    speakGodLine('gameStart', {}, () => {
+        if (openingId !== gameOpeningId || gameState.winner || gameState.phase !== PHASE.NIGHT) return;
+        startNightPhase();
+    });
 }
 
 // ---- Wake Lock：游戏期间防止设备自动锁屏 ----
@@ -3065,6 +3139,7 @@ function releaseWakeLock() {
 // =====================================================
 
 function startNightPhase() {
+    clearNightTransitionTimer();
     clearNightRoleTimer();
     gameState.phase = PHASE.NIGHT;
     gameState.deathsTonight = new Set();
@@ -3136,7 +3211,7 @@ function applyNightCards() {
         } else if (card.id === 'IMMUNITY' && target && target.alive) {
             target.immuneTonight = true;
             holder.cardUsed = true;
-            log(`🛡️ 免疫卡生效：${target.name} 今晚免疫死亡`, 'good');
+            log(`🛡️ 免疫卡生效：${target.name} 只挡当晚的刀、毒和夜间猎枪，不挡白天放逐和白天枪击`, 'good');
         } else if (card.id === 'MIST') {
             log(`🌫️ 迷雾生效：今晚所有查验结果随机`, 'info');
         } else if (card.id === 'MIND_READ' && target && target.alive) {
@@ -3540,7 +3615,8 @@ function showNightGargoyleKill() {
             infoHtml: `
                 <div class="alert-box">
                     <div class="title">${text('night.gargoyleKill.title')}</div>
-                    <div class="text">${text('night.gargoyleKill.prompt', { name: gargoyle.name })}</div>
+                    <div class="text">${text('night.gargoyleKill.prompt')}</div>
+                    <div>${text('night.role.handoff', { name: gargoyle.name })}</div>
                 </div>
             `,
             timerHtml: nightRoleTimerHtml(),
@@ -3893,7 +3969,7 @@ function showNextWitch() {
     if (!witch.alive || witch.skillSealed) {
         showNightRoleWait({
             phaseTitle: text('night.witch.phase'),
-            prompt: '✨ 女巫请睁眼',
+            prompt: text('night.witch.prompt'),
             nextAction: 'afterWitch',
             voiceKey: 'witchAction'
         });
@@ -3943,7 +4019,8 @@ function showNightWitch(witch) {
             infoHtml: `
                 ${deathInfo}
                 <div class="info-box">
-                    <div>${text('night.witch.prompt', { name: witch.name })}</div>
+                    <div>${text('night.witch.prompt')}</div>
+                    <div>${text('night.role.handoff', { name: witch.name })}</div>
                     <div>自救：${!cfg.witchCanSelfSave ? text('night.witch.selfUnavailable') : (witch.selfSaveUsed ? '已用' : '可用')} | 解药：${witch.maxCure - witch.cureUsed} | 毒药：${witch.maxPoison - witch.poisonUsed}</div>
                     ${!cfg.witchCanSelfSave ? '<div style="color:var(--accent-red)">⚠️ 5人局不能自救</div>' : '<div style="color:var(--accent-green)">💊 自救不消耗解药</div>'}
                     ${actionSummary.length > 0 ? `<div style="margin-top:8px;color:var(--accent-yellow);">当前选择：${actionSummary.join('；')}</div>` : ''}
@@ -4057,7 +4134,7 @@ function showNightGuardian() {
         if (hasGuardian) {
             showNightRoleWait({
                 phaseTitle: text('night.guardian.phase'),
-                prompt: '🛡️ 守卫请睁眼',
+                prompt: text('night.guardian.prompt'),
                 nextAction: 'afterGuardian',
                 voiceKey: 'guardianAction'
             });
@@ -4077,7 +4154,8 @@ function showNightGuardian() {
             phaseText: text('night.guardian.phase'),
             infoHtml: `
                 <div class="info-box">
-                    <div>${text('night.guardian.prompt', { name: guardian.name })}</div>
+                    <div>${text('night.guardian.prompt')}</div>
+                    <div>${text('night.role.handoff', { name: guardian.name })}</div>
                     <div>${text('night.guardian.note')}</div>
                     ${guardian.guardedId !== null ? `<div>上一晚守护：${getPlayerById(guardian.guardedId)?.name || '无'}</div>` : ''}
                 </div>
@@ -4141,7 +4219,7 @@ function applyNightDeathProtection(causes, pid) {
     const player = getPlayerById(pid);
     if (player.immuneTonight) {
         delete causes[pid];
-        log(`🛡️ ${player.name} 免疫夜间死亡`, 'good');
+        log(`🛡️ ${player.name} 挡住了当晚的刀和毒`, 'good');
         return;
     }
     // 每个新刀口（含替身转移）都重新检查保护；守护和解药不能挡毒。
@@ -4207,18 +4285,36 @@ function processNightDeaths() {
     });
 
     expireNightOnlyCards();
+    gameState.hunterQueue = [];
+    gameState.hunterQueueMode = 'night';
+    showNightToDayTransition();
+}
 
-    // 检查夜间死亡的猎人是否可以开枪（被毒不能开枪）
-    gameState.hunterQueue = Array.from(gameState.deathsTonight)
-        .map(id => getPlayerById(id))
-        .filter(p => p.roleKey === 'hunter' && p.canShoot && gameState.deathCauses[p.id] && !gameState.deathCauses[p.id].includes('poison'));
+function nightHunterCanShoot(player) {
+    if (!player || player.alive || player.roleKey !== 'hunter' || !player.canShoot) return false;
+    const cause = gameState.deathCauses ? gameState.deathCauses[player.id] : '';
+    return Boolean(cause) && !String(cause).includes('poison');
+}
 
-    if (gameState.hunterQueue.length > 0) {
-        gameState.hunterQueueMode = 'night';
-        showNightHunterShoot(gameState.hunterQueue.shift().id);
+function beginNightHunterConfirmations() {
+    clearNightTransitionTimer();
+    gameState.hunterQueueMode = 'night';
+    gameState.hunterQueue = Array.from(gameState.deathsTonight || [])
+        .map(id => getPlayerById(Number(id)))
+        .filter(nightHunterCanShoot);
+    advanceNightHunterQueue();
+}
+
+function advanceNightHunterQueue() {
+    while (gameState.hunterQueue.length > 0) {
+        const next = gameState.hunterQueue.shift();
+        const hunterId = typeof next === 'number' ? next : next.id;
+        const hunter = getPlayerById(hunterId);
+        if (!nightHunterCanShoot(hunter)) continue;
+        if (!getAlivePlayers().some(player => player.id !== hunterId)) continue;
+        showNightHunterHandoff(hunterId);
         return;
     }
-
     startDayPhase();
 }
 
@@ -4940,34 +5036,54 @@ function advanceToNextNight() {
     startNightPhase();
 }
 
-// 夜间猎人开枪
+// 夜间猎人：公开页只交接设备，私下页才确认是否开枪。
+function showNightHunterHandoff(hunterId) {
+    gameState.hunterQueueMode = 'night';
+    const hunter = getPlayerById(hunterId);
+    const alive = getAlivePlayers().filter(player => player.id !== hunterId);
+    if (!hunter || hunter.alive || !hunter.canShoot || alive.length === 0) {
+        afterNightHunterShoot();
+        return;
+    }
+    clearNightRoleTimer();
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 离场确认`;
+    document.getElementById('game-content').innerHTML = `
+        <div class="info-box" style="text-align:center;">
+            <div class="handoff-prompt">${text('night.role.handoff', { name: hunter.name })}</div>
+            <div>${text('hunter.handoff.note')}</div>
+        </div>`;
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="showNightHunterShoot(${hunterId})">${text('hunter.handoff.open')}</button>`;
+    setGameResumeView('hunterNightHandoff', hunterId);
+}
+
 function showNightHunterShoot(hunterId) {
     gameState.hunterQueueMode = 'night';
     const hunter = getPlayerById(hunterId);
     const alive = getAlivePlayers().filter(p => p.id !== hunterId);
 
-    if (alive.length === 0) {
+    if (!hunter || alive.length === 0) {
         afterNightHunterShoot();
         return;
     }
 
-    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 猎人开枪`;
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · 私下确认`;
     document.getElementById('game-content').innerHTML = `
         ${targetActionLayoutHtml({
-            phaseText: '🔫 猎人开枪',
+            phaseText: text('hunter.private.shoot'),
             infoHtml: `
                 <div class="info-box">
-                    <div>${hunter.name} (猎人) 在夜间死亡</div>
-                    <div>选择要开枪带走的目标</div>
+                    <div>${text('hunter.private.title', { name: hunter.name })}</div>
+                    <div>${text('hunter.private.skill')}</div>
                 </div>
             `,
-            targetLabel: '选择开枪目标',
+            targetLabel: text('hunter.private.aim', { name: hunter.name }),
             wheelHtml: targetWheelHtml(alive, 'hunterShoot', '确认开枪', 'confirmNightHunterShoot', hunterId)
         })}
     `;
 
     document.getElementById('game-bottom-bar').innerHTML = `
-        <button class="btn btn-ghost btn-block" onclick="afterNightHunterShoot()">⏭️ 不开枪</button>
+        <button class="btn btn-ghost btn-block" onclick="afterNightHunterShoot()">${text('hunter.private.skip')}</button>
     `;
     setGameResumeView('hunterNight', hunterId);
 }
@@ -4983,7 +5099,12 @@ function confirmNightHunterShoot(hunterId) {
     hunter.canShoot = false;
     gameState.selectedTarget = null;
     log(`🔫 猎人 ${hunter.name} 向 ${target.name} 开枪`, 'info');
-    if (target.immuneTonight || tryNineLives(target)) {
+    if (target.immuneTonight) {
+        log(`🛡️ ${target.name} 的夜间免疫挡住了猎枪`, 'good');
+        afterNightHunterShoot();
+        return;
+    }
+    if (tryNineLives(target)) {
         afterNightHunterShoot();
         return;
     }
@@ -4991,20 +5112,15 @@ function confirmNightHunterShoot(hunterId) {
     gameState.deathsTonight.add(target.id);
     gameState.deathCauses[target.id] = 'hunter_shoot';
 
-    // 检查被带走的也是猎人
     if (target.roleKey === 'hunter' && target.canShoot) {
-        showNightHunterShoot(target.id);
+        showNightHunterHandoff(target.id);
     } else {
         afterNightHunterShoot();
     }
 }
 
 function afterNightHunterShoot() {
-    if (gameState.hunterQueue.length > 0) {
-        showNightHunterShoot(gameState.hunterQueue.shift().id);
-        return;
-    }
-    startDayPhase();
+    advanceNightHunterQueue();
 }
 
 // =====================================================

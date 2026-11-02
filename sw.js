@@ -1,4 +1,4 @@
-const APP_VERSION = '2026.11.01-1';
+const APP_VERSION = '2026.11.02-1';
 const SCOPE_URL = new URL('./', self.registration.scope).href;
 const SCOPE_PATH = new URL(SCOPE_URL).pathname;
 const CACHE_PREFIX = `werewolf-pwa-${encodeURIComponent(SCOPE_PATH)}-`;
@@ -15,7 +15,29 @@ const APP_SHELL = [
   './generated_roles_fast/witch_01.jpg',
   './generated_roles_fast/hunter_01.jpg',
   './generated_roles_fast/guardian_01.jpg',
-  './generated_roles_fast/gargoyle_01.jpg'
+  './generated_roles_fast/gargoyle_01.jpg',
+  './audio/god/dayStart.mp3',
+  './audio/god/gameStart.mp3',
+  './audio/god/gargoyleCheck.mp3',
+  './audio/god/gargoyleKill.mp3',
+  './audio/god/guardianAction.mp3',
+  './audio/god/nightStart_1.mp3',
+  './audio/god/nightStart_2.mp3',
+  './audio/god/nightStart_3.mp3',
+  './audio/god/nightStart_4.mp3',
+  './audio/god/nightStart_5.mp3',
+  './audio/god/nightStart_6.mp3',
+  './audio/god/nightStart_7.mp3',
+  './audio/god/nightStart_8.mp3',
+  './audio/god/nightStart_9.mp3',
+  './audio/god/nightStart_10.mp3',
+  './audio/god/nightToDayTransition.mp3',
+  './audio/god/prophetCheck.mp3',
+  './audio/god/voiceOn.mp3',
+  './audio/god/voteResult.mp3',
+  './audio/god/voteStart.mp3',
+  './audio/god/witchAction.mp3',
+  './audio/god/wolfAction.mp3'
 ];
 
 function assetURL(path) {
@@ -72,6 +94,14 @@ async function isValidCoreResponse(asset, response) {
     const bytes = new Uint8Array(await response.clone().arrayBuffer());
     return bytes.length > 4 && bytes[0] === 0xff && bytes[1] === 0xd8
       && bytes[2] === 0xff && bytes[bytes.length - 2] === 0xff && bytes[bytes.length - 1] === 0xd9;
+  }
+  if (asset.endsWith('.mp3')) {
+    const bytes = new Uint8Array(await response.clone().arrayBuffer());
+    const id3 = bytes.length >= 3 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33;
+    const frame = bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0;
+    const playable = contentType.includes('audio/mpeg') || contentType.includes('audio/mp3')
+      || contentType.includes('application/octet-stream') || contentType === '';
+    return playable && (id3 || frame);
   }
   return false;
 }
