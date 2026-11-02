@@ -3215,7 +3215,7 @@ function applyNightCards() {
         } else if (card.id === 'MIST') {
             log(`🌫️ 迷雾生效：今晚所有查验结果随机`, 'info');
         } else if (card.id === 'MIND_READ' && target && target.alive) {
-            log(`👂 心声聆听待命：若 ${target.name} 今晚被查验，主持私下告知查验者`, 'good');
+            log(`👂 心声聆听待命：若 ${target.name} 今晚被查验，${target.name} 会得知是谁查验了自己`, 'good');
         }
     });
 }
@@ -3226,8 +3226,8 @@ function checkGargoyleAwaken() {
 
     const aliveWerewolves = getAlivePlayers().filter(p => p.roleKey === 'werewolf');
     if (aliveWerewolves.length === 0) {
+        // 只改内部状态。主持日志不能宣读觉醒或杀人能力。
         gargoyle.gargoyleAwakened = true;
-        log(`🗿 ${gargoyle.name} (石像鬼) 觉醒！获得杀人能力`, 'wolf');
     }
 }
 
@@ -4387,6 +4387,8 @@ function finishDaySpeakingTimer() {
 }
 
 function startDaySpeechFlow() {
+    // 昨夜死亡或平安夜公告已经显示后，才允许进入胜负揭晓。
+    if (checkVictory()) return;
     clearDaySpeechTimer();
     gameState.phase = PHASE.DAY;
     gameState.dayLastWordsQueue = Array.from(gameState.deathsTonight)
@@ -4519,7 +4521,6 @@ function startDayPhase() {
     log(`======== 第${gameState.dayNumber}天 ========`, 'info');
     speakGodLine('dayStart');
 
-    if (checkVictory()) return;
     gameState.dayRevealId = null;
     gameState.dayRevealIds = [];
     applyRevealCardIfNeeded();

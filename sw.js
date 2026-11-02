@@ -1,4 +1,4 @@
-const APP_VERSION = '2026.11.02-1';
+const APP_VERSION = '2026.11.02-2';
 const SCOPE_URL = new URL('./', self.registration.scope).href;
 const SCOPE_PATH = new URL(SCOPE_URL).pathname;
 const CACHE_PREFIX = `werewolf-pwa-${encodeURIComponent(SCOPE_PATH)}-`;
