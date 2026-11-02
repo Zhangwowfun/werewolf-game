@@ -29,19 +29,19 @@
 今夜相逢于此，请诸位就座，较量即将开始。
 
 ## voice.nightStart
-第{day}夜，夜幕降临，请闭眼。
+夜幕降临，请闭眼。
 
 ## voice.nightStart.2
-第{day}夜，月色渐深，请闭眼。
+月色渐深，请闭眼。
 
 ## voice.nightStart.3
-第{day}夜，长夜已至，请闭眼。
+长夜已至，请闭眼。
 
 ## voice.nightStart.4
-第{day}夜，星光入夜，请闭眼。
+星光入夜，请闭眼。
 
 ## voice.nightStart.5
-第{day}夜，四下渐静，请闭眼。
+四下渐静，请闭眼。
 
 ## voice.prophetCheck
 预言家请睁眼，循着星光，查验一位玩家的身份。

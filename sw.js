@@ -1,4 +1,4 @@
-const APP_VERSION = '2026.11.02-2';
+const APP_VERSION = '2026.11.02-3';
 const SCOPE_URL = new URL('./', self.registration.scope).href;
 const SCOPE_PATH = new URL(SCOPE_URL).pathname;
 const CACHE_PREFIX = `werewolf-pwa-${encodeURIComponent(SCOPE_PATH)}-`;
@@ -21,16 +21,11 @@ const APP_SHELL = [
   './audio/god/gargoyleCheck.mp3',
   './audio/god/gargoyleKill.mp3',
   './audio/god/guardianAction.mp3',
-  './audio/god/nightStart_1.mp3',
-  './audio/god/nightStart_2.mp3',
-  './audio/god/nightStart_3.mp3',
-  './audio/god/nightStart_4.mp3',
-  './audio/god/nightStart_5.mp3',
-  './audio/god/nightStart_6.mp3',
-  './audio/god/nightStart_7.mp3',
-  './audio/god/nightStart_8.mp3',
-  './audio/god/nightStart_9.mp3',
-  './audio/god/nightStart_10.mp3',
+  './audio/god/nightOpen.mp3',
+  './audio/god/nightOpen_2.mp3',
+  './audio/god/nightOpen_3.mp3',
+  './audio/god/nightOpen_4.mp3',
+  './audio/god/nightOpen_5.mp3',
   './audio/god/nightToDayTransition.mp3',
   './audio/god/prophetCheck.mp3',
   './audio/god/voiceOn.mp3',
