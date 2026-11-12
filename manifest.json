@@ -1,0 +1,21 @@
+{
+  "id": "./index.html",
+  "name": "狼人杀 v4.2 石像鬼版",
+  "short_name": "狼人杀",
+  "description": "可离线打开的狼人杀石像鬼版主持工具",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0c1919",
+  "theme_color": "#0c1919",
+  "orientation": "any",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
