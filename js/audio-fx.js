@@ -25,6 +25,9 @@ function setStoredAmbiencePref(enabled) {
 
 function getPartyAudioContext() {
     if (typeof window === 'undefined') return null;
+    if (typeof navigator !== 'undefined' && navigator.audioSession) {
+        try { navigator.audioSession.type = 'playback'; } catch (e) { /* 旧版忽略 */ }
+    }
     const Ctor = window.AudioContext || window.webkitAudioContext;
     if (!Ctor) return null;
     if (!partyAudioCtx) {
@@ -34,7 +37,8 @@ function getPartyAudioContext() {
             return null;
         }
     }
-    if (partyAudioCtx.state === 'suspended' && typeof partyAudioCtx.resume === 'function') {
+    if ((partyAudioCtx.state === 'suspended' || partyAudioCtx.state === 'interrupted')
+        && typeof partyAudioCtx.resume === 'function') {
         partyAudioCtx.resume().catch(() => {});
     }
     return partyAudioCtx;

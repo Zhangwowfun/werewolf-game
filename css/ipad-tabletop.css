@@ -1,0 +1,384 @@
+/* 单台 iPad 多人传机与桌面公放布局补丁：输入框解禁、防抠图拖拽、竖屏转盘自适应、180°桌面翻转与防窥选票网格 */
+
+input,
+textarea,
+.name-input {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default;
+}
+
+.name-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+.name-input-wrap .name-input {
+    width: 100%;
+    padding-right: 38px;
+}
+.name-clear-btn {
+    position: absolute;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid rgba(204, 216, 188, 0.22);
+    background: rgba(28, 47, 42, 0.85);
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.name-clear-btn:active {
+    transform: scale(0.92);
+    color: var(--text-primary);
+}
+
+/* 彻底禁用苹果 iPadOS 长按角色立绘浮起抠图拖拽与保存菜单 */
+img,
+.role-image-big,
+.role-image-small,
+.hold-peek-secret,
+.hold-peek-secret * {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* 全面屏 iPad 底部 Home 横条防误触安全留白 */
+.bottom-bar {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 桌面平放 iPad 供对面玩家一键静音翻转 180° */
+#app-root.tabletop-flipped {
+    transform: rotate(180deg);
+    transform-origin: center center;
+}
+.tabletop-flip-bar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+.tabletop-flip-btn {
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(184, 154, 103, 0.3);
+    background: rgba(14, 14, 14, 0.85);
+    color: #b89a67;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.tabletop-flip-btn:active {
+    transform: scale(0.95);
+}
+
+/* 夜间页内暗琥珀提示条（替代刺眼白色系统 alert 弹窗） */
+.night-inline-toast {
+    position: fixed;
+    left: 50%;
+    top: 22px;
+    transform: translateX(-50%) translateY(-14px);
+    z-index: 9999;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: #1a130b;
+    border: 1px solid #c59f61;
+    color: #e9d5af;
+    font-size: 14px;
+    font-weight: 700;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.night-inline-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* 开局一圈传机：顶部对齐防跳位 + 横屏双栏一屏全显 + 宽屏三键横排省高度 */
+#screen-role .content {
+    justify-content: flex-start !important;
+    padding-top: 8px;
+}
+#role-reveal-content {
+    padding: 4px 0 8px !important;
+    width: min(100%, 820px) !important;
+}
+.opening-pass-header {
+    text-align: center;
+    margin-bottom: 8px;
+}
+.opening-choice-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+@media (min-width: 740px) {
+    .opening-choice-btn-group {
+        display: grid;
+        grid-template-columns: 1.12fr 1.25fr 0.88fr;
+        gap: 10px;
+    }
+    .opening-choice-btn-group .btn {
+        padding: 12px 10px;
+        font-size: 14px;
+        min-height: 48px;
+    }
+}
+@media (min-width: 680px) and (orientation: landscape) {
+    .hold-peek-card {
+        min-height: 170px;
+        padding: 14px 18px;
+        margin-bottom: 8px;
+    }
+    .hold-peek-ring {
+        width: 92px;
+        height: 92px;
+        margin: 4px auto 8px;
+    }
+    .hold-peek-card.peeking .hold-peek-secret {
+        display: grid;
+        grid-template-columns: minmax(120px, 165px) minmax(0, 1fr);
+        gap: 16px;
+        align-items: center;
+        text-align: left;
+    }
+    .hold-peek-card.peeking .role-image-big {
+        max-height: min(26vh, 185px);
+        width: auto;
+        margin: 0 auto;
+    }
+    .hold-peek-card.peeking .role-name-big {
+        font-size: 22px;
+        margin: 0 0 4px;
+        text-align: left;
+    }
+    .hold-peek-card.peeking .role-desc-text {
+        font-size: 13px;
+        margin: 0;
+        text-align: left;
+    }
+    .hold-peek-card.peeking .privilege-card-display {
+        margin-top: 8px !important;
+        padding: 10px 12px;
+    }
+    .hold-peek-card.peeking .privilege-card-display .name {
+        font-size: 17px;
+        margin: 2px 0;
+    }
+    #opening-card-decision-panel .player-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+    }
+    #opening-card-decision-panel .player-card {
+        padding: 8px 6px;
+        min-height: 68px;
+    }
+    #opening-card-decision-panel .player-avatar {
+        font-size: 22px;
+        margin-bottom: 2px;
+    }
+}
+
+/* 白天投票交接遮罩与 iPad 双列紧凑选票网格（防邻座余光瞄见整行高亮） */
+.vote-handoff-card {
+    max-width: 520px;
+    margin: 28px auto;
+    padding: 28px 22px;
+    border-radius: 22px;
+    border: 1px solid var(--border-strong);
+    background: radial-gradient(ellipse at 50% 15%, rgba(215, 185, 131, 0.1), transparent 70%), #152a26;
+    text-align: center;
+}
+.vote-candidates-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+.vote-candidates-grid .vote-candidate {
+    margin-bottom: 0;
+}
+@media (min-width: 680px) {
+    .vote-candidates-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .vote-candidates-grid .vote-candidate {
+        padding: 12px 16px;
+        min-height: 58px;
+    }
+}
+
+/* 处决台在 iPad 横屏下左右分栏：左侧盲狙抓凶、右侧惩罚题目与互动秒表一屏展示 */
+@media (min-width: 900px) and (orientation: landscape) {
+    .exile-stage-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.92fr) minmax(0, 1.08fr);
+        gap: 18px;
+        align-items: start;
+        text-align: left;
+    }
+    .exile-stage-left .betrayer-snipe-card,
+    .exile-stage-right .privilege-action-reveal {
+        margin-top: 0 !important;
+    }
+}
+
+/* 补齐全部 iPad 竖屏（768x1024 / 820x1180 / 834x1194 / 1024x1366）游戏内转盘与首页自适应 */
+@media (min-width: 481px) and (max-width: 1024px) and (orientation: portrait) {
+    .home-container { display: flex; flex-direction: column; gap: 0; justify-content: safe center; padding: 32px; }
+    .home-art { width: 260px; height: 280px; flex-shrink: 0; margin-bottom: 22px; }
+    .home-art-caption { display: none; }
+    .home-title { text-align: center; }
+    .home-panel { width: 100%; align-items: center; gap: 0; }
+    .home-title h1 { font-size: 56px; }
+    .home-eyebrow { justify-content: center; margin-bottom: 10px; }
+    .home-eyebrow::before { display: none; }
+    .home-subtitle { margin: 10px 0 20px; }
+    .home-mode-card { margin-bottom: 14px; }
+    .home-mode-card, .home-buttons, #resume-banner { max-width: 480px; flex-shrink: 0; }
+}
+
+@media (min-width: 481px) and (orientation: portrait) {
+    #screen-game .header {
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-bottom: 6px;
+    }
+    #screen-game .content {
+        display: flex;
+        flex-direction: column;
+        padding-top: 6px;
+        padding-bottom: 8px;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+    .target-action-layout {
+        flex: 1 1 0;
+        min-height: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .target-action-side {
+        flex-shrink: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1.38fr) minmax(170px, 0.62fr);
+        gap: 6px 12px;
+        align-items: start;
+    }
+    .target-action-phase,
+    .target-action-label,
+    .target-action-side > .btn {
+        grid-column: 1 / -1;
+    }
+    .target-action-side .info-box,
+    .target-action-side .alert-box {
+        padding: 9px 12px;
+        font-size: 13px;
+        line-height: 1.42;
+    }
+    .target-action-side .night-phase-timer {
+        padding: 8px 10px;
+    }
+    .target-action-side .night-phase-timer .count {
+        font-size: 26px;
+        margin: 2px 0;
+    }
+    .target-action-side .night-phase-timer .note {
+        font-size: 11px;
+        line-height: 1.35;
+    }
+    .target-action-main {
+        flex: 1 1 0;
+        min-height: 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: safe center;
+        overflow: hidden;
+    }
+    .witch-potion-tabs {
+        margin-bottom: 6px;
+        width: min(100%, 480px);
+    }
+    .witch-potion-tab {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    .target-action-layout .target-wheel-area {
+        flex: 1 1 0;
+        min-height: 0;
+        width: 100%;
+        margin: 0;
+        container-type: size;
+        align-items: center;
+    }
+    .target-action-layout .target-wheel-shell {
+        --target-wheel-size: min(100cqmin, 500px);
+        --target-wheel-radius: calc(var(--target-wheel-size) / 2 - clamp(44px, calc(var(--target-wheel-size) * 0.13), 66px));
+        min-width: 0;
+        min-height: 0;
+    }
+    .target-action-layout .target-wheel-node {
+        width: clamp(68px, calc(var(--target-wheel-size) * 0.2), 104px);
+        height: clamp(68px, calc(var(--target-wheel-size) * 0.2), 104px);
+        border-radius: 15px;
+    }
+    .target-action-layout .target-wheel-node .avatar {
+        font-size: clamp(20px, calc(var(--target-wheel-size) * 0.062), 28px);
+    }
+    .target-action-layout .target-wheel-node .name {
+        font-size: clamp(11px, calc(var(--target-wheel-size) * 0.03), 14px);
+        max-width: clamp(54px, calc(var(--target-wheel-size) * 0.16), 84px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .target-action-layout .target-wheel-node .num {
+        min-width: 22px;
+        height: 22px;
+        font-size: 12px;
+        top: -11px;
+    }
+    .target-action-layout .target-wheel-shell[data-node-density="crowded"] .target-wheel-node {
+        width: clamp(56px, calc(var(--target-wheel-size) * 0.152), 82px);
+        height: clamp(56px, calc(var(--target-wheel-size) * 0.152), 82px);
+        border-radius: 13px;
+    }
+    .target-action-layout .target-wheel-shell[data-node-density="crowded"] .target-wheel-node .avatar {
+        font-size: clamp(18px, calc(var(--target-wheel-size) * 0.05), 24px);
+    }
+    .target-action-layout .target-wheel-shell[data-node-density="crowded"] .target-wheel-node .name {
+        font-size: 11px;
+        max-width: clamp(46px, calc(var(--target-wheel-size) * 0.13), 68px);
+    }
+    .target-action-layout .target-wheel-center {
+        width: clamp(124px, calc(var(--target-wheel-size) * 0.31), 166px);
+        height: clamp(124px, calc(var(--target-wheel-size) * 0.31), 166px);
+    }
+    .target-action-layout .target-wheel-selected-name {
+        font-size: clamp(16px, calc(var(--target-wheel-size) * 0.044), 22px);
+    }
+    .target-action-layout .target-wheel-confirm {
+        padding: 7px 12px;
+        font-size: 12px;
+        margin-top: 6px;
+    }
+    #opening-card-decision-panel .player-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+    }
+}

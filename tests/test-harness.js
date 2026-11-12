@@ -94,7 +94,13 @@ function createHarness({ hangAudio = false } = {}) {
         gBtn.textContent = gBtn.dataset.gender === 'female' ? 'F' : 'M';
         const nInput = makeElement(`name-${idx}`);
         nInput.dataset.index = String(idx);
-        nInput.value = valueMatch ? valueMatch[1] : `玩家${idx + 1}`;
+        const rawAttrVal = valueMatch ? valueMatch[1] : `玩家${idx + 1}`;
+        nInput.value = rawAttrVal
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&gt;/g, '>')
+            .replace(/&lt;/g, '<')
+            .replace(/&amp;/g, '&');
         genderButtons.push(gBtn);
         nameInputs.push(nInput);
         return row;

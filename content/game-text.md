@@ -299,7 +299,7 @@
 女巫请睁眼，烛火微明，请决定是否使用药水。
 
 ## night.witch.confirm
-✓ 确认 {name} 的行动
+✓ 确认女巫用药行动
 
 ## night.witch.skip
 ⏭️ 什么都不做

@@ -1,4 +1,7 @@
-// 开局一圈传机（按住看底牌+同屏决断特权卡）与「虚晃一枪·空城计」模块
+// 开局一圈传机（按住圆圈看底牌+同屏决断特权卡）与「虚晃一枪·空城计」模块
+
+let holdPeekDelayTimer = null;
+let holdPeekActivePointer = false;
 
 function getCardDealMode() {
     if (typeof gameState !== 'undefined' && gameState.cardDealMode) return gameState.cardDealMode;
@@ -49,6 +52,7 @@ function selectHoldersForDealMode(players, mode) {
 }
 
 function handleSetupStartClick() {
+    if (typeof unlockIpadAudioAndSpeech === 'function') unlockIpadAudioAndSpeech();
     playSoundCheckBell();
     const mode = getStoredPref('werewolf-card-deal-mode', 'female_only');
     const genders = Array.from(document.querySelectorAll('.gender-toggle'));
@@ -65,7 +69,6 @@ function isCardActiveForCurrentRound(holder, cardId = null) {
     if (!isCardActive(holder, cardId)) return false;
     const effectiveDay = holder.cardEffectiveDay || 1;
     const id = holder.card.id;
-    // 单轮卡仅在其指定生效日当晚/当天触发；持久触发卡从生效日起一直有效直至消耗
     if (['DECOY', 'NINE_LIVES', 'DISRUPTOR'].includes(id)) {
         return gameState.dayNumber >= effectiveDay;
     }
@@ -105,27 +108,45 @@ function buildOpeningCardPreviewHtml(player, card) {
     const needsTarget = card ? cardNeedsTarget(card) : false;
     const targets = card && needsTarget ? getCardActivationTargets(player) : [];
     const targetGridHtml = card && needsTarget ? `
-        <div class="card-title" style="margin-top:12px;">选择特权卡作用目标（保密）</div>
+        <div class="card-title" style="margin-top:8px;">点选特权卡作用目标（卡名已隐藏防偷看）</div>
         <div class="player-grid">${targets.map(p => playerCardHtml(p, 'cardActivation')).join('')}</div>
     ` : '';
     const secretCardHtml = card ? `
-        <div class="privilege-card-display" style="margin-top:14px;">
-            <div class="label">专属暗置特权卡（全场保密）</div>
+        <div class="privilege-card-display" style="margin-top:10px;">
+            <div class="label">专属暗置特权卡（松手即隐藏）</div>
             <div class="name">${card.emoji} ${card.name}</div>
             <div class="desc">${card.desc}</div>
         </div>
-    ` : `<div class="info-box" style="margin-top:14px;font-size:13px;">本局你未持有特权卡。记住身份后松手隐藏，点击下方按钮传给下一位即可。</div>`;
+    ` : `<div class="info-box" style="margin-top:10px;font-size:13px;">本局你未持有特权卡。记住身份后松手隐藏，点底部按钮传给下一位。</div>`;
+    // 松手后的外部面板绝不明文显示特权卡名或效果，彻底防止大屏 iPad 邻座余光泄密
     const panelHtml = card ? `
-        <div class="info-box" style="margin-bottom:10px;font-size:13px;">
-            <div><strong>你的特权卡：${card.emoji} ${card.name}</strong> — ${card.desc}</div>
-            <div style="margin-top:4px;color:var(--accent-gold);">提示：可选「虚晃一枪（空城计）」在首轮照做公开动作放烟雾弹骗全场，把真卡藏到第 2 轮自动爆发！</div>
+        <div class="info-box" style="margin-bottom:8px;font-size:13px;">
+            <div><strong>暗置特权决策</strong>（卡名已隐藏，忘词可再次按住上方圆圈重看）</div>
+            <div style="margin-top:4px;color:var(--accent-gold);">${needsTarget ? '请先在下方点选 1 名作用目标，再点底部按钮选择「真激活 / 空城计 / 放弃」。' : '本卡无需选择目标，请直接在底部按钮选择「真激活 / 空城计 / 放弃」。'}</div>
         </div>
         ${targetGridHtml}
-    ` : '';
+    ` : `<div class="info-box" style="margin-bottom:8px;font-size:13px;color:var(--text-dim);">身份已确认并隐藏。请点击底部按钮后再将 iPad 递给下一位玩家。</div>`;
     return { secretCardHtml, panelHtml };
 }
 
+function renderHoldPeekMaskHtml(unlocked, hasCard) {
+    if (unlocked) {
+        return `
+            <div class="hold-peek-ring peeked" id="hold-peek-ring">按住重看</div>
+            <div style="font-size:14px;color:var(--accent-green);font-weight:700;">✓ 已查看并隐藏底牌</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">请先点下方按钮完成操作，再把 iPad 传给下一位</div>
+        `;
+    }
+    return `
+        <div class="hold-peek-ring" id="hold-peek-ring">按住看底牌</div>
+        <div style="font-size:14px;color:var(--text-secondary);">拇指按住圆圈不放查看身份${hasCard ? '与暗置卡' : ''}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">仅圆圈响应按住防交接误触 · 松手立即黑屏隐藏</div>
+    `;
+}
+
 function showOpeningPass(index) {
+    clearHoldPeekDelay();
+    holdPeekActivePointer = false;
     if (index >= gameState.players.length) {
         beginMergedPublicDareQueue();
         return;
@@ -141,29 +162,26 @@ function showOpeningPass(index) {
     const { secretCardHtml, panelHtml } = buildOpeningCardPreviewHtml(player, card);
 
     document.getElementById('role-reveal-content').innerHTML = `
-        <div style="text-align:center;margin-bottom:12px;">
-            <div style="font-size:15px;color:var(--text-dim);">请把设备交给（全桌仅传这一圈）</div>
-            <div style="font-size:24px;font-weight:800;margin-top:4px;color:var(--accent-gold);">${player.name}</div>
+        <div class="opening-pass-header">
+            <div style="font-size:14px;color:var(--text-dim);">请按座次将 iPad 交给（全桌仅传这一圈）</div>
+            <div style="font-size:24px;font-weight:800;margin-top:2px;color:var(--accent-gold);">${player.name}</div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">第 ${index + 1} / ${gameState.players.length} 位</div>
         </div>
-        <div class="hold-peek-card" id="hold-peek-box"
-            onpointerdown="startHoldPeek(${index})"
-            onpointerup="endHoldPeek()"
-            onpointerleave="endHoldPeek()"
-            onpointercancel="endHoldPeek()">
-            <div class="hold-peek-mask">
-                <div class="hold-peek-ring">按住看底牌</div>
-                <div style="font-size:14px;color:var(--text-secondary);">拇指按住圆圈不放查看身份${card ? '与特权卡' : ''}</div>
-                <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">松开手指立即自动黑屏防偷看</div>
+        <div class="hold-peek-card" id="hold-peek-box" oncontextmenu="return false;" ondragstart="return false;">
+            <div class="hold-peek-mask" id="hold-peek-mask"
+                onpointerdown="beginHoldPeekPress(${index}, event)">
+                ${renderHoldPeekMaskHtml(unlocked, Boolean(card))}
             </div>
             <div class="hold-peek-secret">
                 ${roleImageHtml(player, 'role-image-big')}
-                <div class="role-name-big">${getRoleDisplayName(player)}</div>
-                <div class="role-desc-text">${identityRoleDesc(player)}</div>
-                ${secretCardHtml}
+                <div class="hold-peek-secret-body">
+                    <div class="role-name-big">${getRoleDisplayName(player)}</div>
+                    <div class="role-desc-text">${identityRoleDesc(player)}</div>
+                    ${secretCardHtml}
+                </div>
             </div>
         </div>
-        <div id="opening-card-decision-panel" style="display:${unlocked ? 'block' : 'none'};text-align:left;">${panelHtml}</div>
+        <div id="opening-card-decision-panel" style="display:${unlocked ? 'block' : 'none'};text-align:left;width:100%;">${panelHtml}</div>
     `;
 
     renderOpeningPassBottomBar(index, unlocked);
@@ -188,36 +206,103 @@ function renderOpeningPassBottomBar(index, unlocked) {
         return;
     }
     nav.innerHTML = `
-        <button class="btn btn-primary btn-block" onclick="submitOpeningCardChoice(${index}, 'real')">真激活（首轮生效，稍后做公开动作）</button>
-        <button class="btn btn-secondary btn-block" style="margin-top:8px;border-color:var(--accent-gold);color:var(--accent-gold);" onclick="submitOpeningCardChoice(${index}, 'bluff')">虚晃一枪·空城计（首轮演戏，真卡藏到第2轮生效）</button>
-        <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="submitOpeningCardChoice(${index}, 'skip')">低调放弃特权卡，${isLast ? '进入下一步' : '传给下一位'}</button>
+        <div class="opening-choice-btn-group">
+            <button class="btn btn-primary btn-block" onclick="submitOpeningCardChoice(${index}, 'real')">真激活（首轮生效，稍后做公开动作）</button>
+            <button class="btn btn-secondary btn-block" style="border-color:var(--accent-gold);color:var(--accent-gold);" onclick="submitOpeningCardChoice(${index}, 'bluff')">虚晃一枪·空城计（首轮演戏，藏到第2轮生效）</button>
+            <button class="btn btn-ghost btn-block" onclick="submitOpeningCardChoice(${index}, 'skip')">低调放弃特权卡，${isLast ? '进入下一步' : '传给下一位'}</button>
+        </div>
     `;
 }
 
-function startHoldPeek(index) {
-    const box = document.getElementById('hold-peek-box');
-    if (box) box.classList.add('peeking');
+function clearHoldPeekDelay() {
+    if (holdPeekDelayTimer !== null) {
+        clearTimeout(holdPeekDelayTimer);
+        holdPeekDelayTimer = null;
+    }
+    if (typeof document !== 'undefined') {
+        const box = document.getElementById('hold-peek-box');
+        if (box && box.classList) box.classList.remove('pressing');
+    }
+}
+
+function beginHoldPeekPress(index, event) {
+    if (event) {
+        const ring = event.target && event.target.closest ? event.target.closest('#hold-peek-ring') : null;
+        if (!ring) return;
+        if (event.preventDefault) event.preventDefault();
+        if (typeof unlockIpadAudioAndSpeech === 'function') unlockIpadAudioAndSpeech();
+        if (event.currentTarget && event.currentTarget.setPointerCapture && event.pointerId !== undefined) {
+            try { event.currentTarget.setPointerCapture(event.pointerId); } catch (e) { /* 忽略 */ }
+        }
+    }
+    clearHoldPeekDelay();
+    holdPeekActivePointer = true;
+    const box = typeof document !== 'undefined' ? document.getElementById('hold-peek-box') : null;
+    if (box && box.classList) box.classList.add('pressing');
+    holdPeekDelayTimer = setTimeout(() => {
+        holdPeekDelayTimer = null;
+        if (!holdPeekActivePointer) return;
+        startHoldPeek(index, true);
+    }, 130);
+}
+
+function revealUnlockedOpeningControls(index) {
+    const player = gameState.players[index];
+    if (!player) return;
+    const mask = typeof document !== 'undefined' ? document.getElementById('hold-peek-mask') : null;
+    if (mask) {
+        const isCaptured = false;
+        void isCaptured;
+        mask.innerHTML = renderHoldPeekMaskHtml(true, Boolean(player.hasCard));
+    }
+    const panel = typeof document !== 'undefined' ? document.getElementById('opening-card-decision-panel') : null;
+    if (panel) panel.style.display = 'block';
+    renderOpeningPassBottomBar(index, true);
+}
+
+function startHoldPeek(index, fromPointerHold = false) {
+    const box = typeof document !== 'undefined' ? document.getElementById('hold-peek-box') : null;
+    if (box) {
+        box.classList.remove('pressing');
+        box.classList.add('peeking');
+    }
     const player = gameState.players[index];
     if (player && !player.peekedRole) {
         player.peekedRole = true;
-        const panel = document.getElementById('opening-card-decision-panel');
-        if (panel) panel.style.display = 'block';
-        renderOpeningPassBottomBar(index, true);
+        if (!fromPointerHold) {
+            revealUnlockedOpeningControls(index);
+        }
         saveGameSnapshot();
     }
 }
 
 function endHoldPeek() {
+    clearHoldPeekDelay();
+    const wasPointer = holdPeekActivePointer;
+    holdPeekActivePointer = false;
     if (typeof document === 'undefined') return;
     const box = document.getElementById('hold-peek-box');
+    const wasPeeking = box && box.classList && box.classList.contains('peeking');
     if (box) box.classList.remove('peeking');
+    if ((wasPointer || wasPeeking) && typeof gameState !== 'undefined' && gameState.phase === PHASE.ROLE) {
+        const idx = gameState.openingPassIndex || 0;
+        const player = gameState.players && gameState.players[idx];
+        if (player && player.peekedRole) {
+            revealUnlockedOpeningControls(idx);
+        }
+    }
 }
 
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('blur', endHoldPeek);
+    window.addEventListener('pointerup', endHoldPeek);
+    window.addEventListener('pointercancel', endHoldPeek);
+    window.addEventListener('touchend', endHoldPeek);
+    window.addEventListener('touchcancel', endHoldPeek);
 }
 
 function submitOpeningCardChoice(index, mode) {
+    if (typeof unlockIpadAudioAndSpeech === 'function') unlockIpadAudioAndSpeech();
     const holder = gameState.players[index];
     if (!holder || !holder.hasCard) {
         advanceOpeningPass(index);
@@ -236,15 +321,15 @@ function submitOpeningCardChoice(index, mode) {
 
     const needsTarget = cardNeedsTarget(holder.card);
     if (needsTarget && gameState.selectedTarget === null) {
-        alert('请先点击选择特权卡的目标玩家');
+        notifyPlayerPrompt('请先点击选择特权卡的目标玩家');
         return;
     }
     if (needsTarget && !getCardActivationTargets(holder).some(p => p.id === gameState.selectedTarget)) {
-        alert('请选择有效的目标玩家');
+        notifyPlayerPrompt('请选择有效的目标玩家');
         return;
     }
 
-    holder.openingChoiceMode = mode; // 'real' | 'bluff'
+    holder.openingChoiceMode = mode;
     holder.cardTargetId = needsTarget ? gameState.selectedTarget : null;
     holder.pendingPrivilegeAction = '';
     holder.pendingPrivilegeKey = '';
@@ -253,6 +338,7 @@ function submitOpeningCardChoice(index, mode) {
 }
 
 function advanceOpeningPass(index) {
+    if (typeof unlockIpadAudioAndSpeech === 'function') unlockIpadAudioAndSpeech();
     endHoldPeek();
     if (index + 1 < gameState.players.length) {
         showOpeningPass(index + 1);

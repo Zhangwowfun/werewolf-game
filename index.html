@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="狼人杀">
 <meta name="theme-color" content="#0c1919">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon.svg">
-<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
 <title>狼人杀 v4.2 · 石像鬼版</title>
 <style>
 :root {
@@ -817,6 +818,7 @@ button:focus-visible, [onclick]:focus-visible, input:focus-visible { outline: 2p
 }
 </style>
 <link rel="stylesheet" href="./css/spicy-immersive.css">
+<link rel="stylesheet" href="./css/ipad-tabletop.css">
 </head>
 <body>
 <div id="app-root">
@@ -873,7 +875,11 @@ button:focus-visible, [onclick]:focus-visible, input:focus-visible { outline: 2p
         <div class="content">
             <div class="setup-layout">
                 <div class="setup-column">
-                    <div class="card-title">玩家名称与性别（点击头像切换男女）</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+                        <div class="card-title" style="margin-bottom:0;">玩家顺时针座次与性别（点名字直接改·点头像切男女）</div>
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 10px;min-height:28px;font-size:12px;" onclick="resetSavedRosterToDefault()">重置名单</button>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">建议按餐桌顺时针顺序填写，传 iPad 看牌、投票与邻座盲撩均按此座次。</div>
                     <div id="name-inputs"></div>
                 </div>
                 <div class="setup-column">
@@ -894,8 +900,9 @@ button:focus-visible, [onclick]:focus-visible, input:focus-visible { outline: 2p
                         <button class="btn btn-ghost btn-block btn-sm" id="no-props-toggle" onclick="toggleNoPropsMode()">无道具模式（自动替换冰块/眼罩/鞭子）：关闭</button>
                         <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="blind-flirt-toggle" onclick="toggleBlindFlirtRule()">黎明15秒暗夜邻座盲撩：开启</button>
                         <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="night-stealth-toggle" onclick="toggleNightStealthPref()">暗夜纯黑防照脸护眼罩：开启</button>
+                        <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="setup-god-voice-toggle" onclick="toggleGodVoice()">🔊 上帝语音：开</button>
                         <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="ambience-sound-toggle" onclick="toggleAmbienceSound()">夜间篝火心跳背景音：开启</button>
-                        <button class="btn btn-secondary btn-block btn-sm" style="margin-top:8px;" onclick="playSoundCheckBell()">敲钟试音（请关闭手机侧边静音键）</button>
+                        <button class="btn btn-secondary btn-block btn-sm" style="margin-top:8px;" onclick="unlockIpadAudioAndSpeech();playSoundCheckBell()">敲钟试音（iPad 请确认右上角控制中心未开静音）</button>
                         <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="tie-rule-toggle" onclick="toggleTieRule()">⚖️ 平票处理：随机处决</button>
                         <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="witch-rule-toggle" onclick="toggleWitchRule()">🧪 女巫同夜救+毒：允许</button>
                     </div>
@@ -982,6 +989,7 @@ button:focus-visible, [onclick]:focus-visible, input:focus-visible { outline: 2p
 <script src="./js/opening-bluff.js"></script>
 <script src="./js/exile-dawn-spicy.js"></script>
 <script src="./js/party-awards.js"></script>
+<script src="./js/ipad-ergonomics.js"></script>
 <script>
 
 // =====================================================
@@ -1241,7 +1249,7 @@ const DEFAULT_GAME_TEXT = {
     'night.gargoyleCheck.confirm': '✓ 确认查验',
     'night.witch.phase': '🌙 女巫用药',
     'night.witch.prompt': '女巫请睁眼，烛火微明，请决定是否使用药水。',
-    'night.witch.confirm': '✓ 确认 {name} 的行动',
+    'night.witch.confirm': '✓ 确认女巫用药行动',
     'night.witch.skip': '⏭️ 什么都不做',
     'night.guardian.phase': '🌙 守卫守护',
     'night.guardian.prompt': '守卫请睁眼。愿长夜有光，请选择今晚守护的人。',
@@ -1411,7 +1419,7 @@ let daySpeechTimerId = null;
 let timedActionTimerId = null;
 let nightPreludeTimerId = null;
 const NIGHT_ROLE_PHASE_SECONDS = 10;
-const NIGHT_PRELUDE_SECONDS = 5;
+const NIGHT_PRELUDE_SECONDS = 6;
 const DAY_SPEECH_SECONDS = 30;
 let godVoiceEnabled = loadGodVoiceEnabled();
 const godVoiceHistory = new Map();
@@ -1712,7 +1720,7 @@ function getRoleImagePath(role, index) {
 function roleImageHtml(player, className) {
     // 固定基础图随应用预缓存；旧存档中的 fallback 可能仍等于随机原图。
     const fallback = getRoleImagePath(player.role, 1);
-    return `<img class="${className}" src="${player.roleImage}" data-fallback-src="${fallback}" alt="${player.role.name}" loading="eager" decoding="async" onerror="this.onerror=null;this.src=this.dataset.fallbackSrc;">`;
+    return `<img class="${className}" src="${player.roleImage}" data-fallback-src="${fallback}" alt="${player.role.name}" draggable="false" loading="eager" decoding="async" onerror="this.onerror=null;this.src=this.dataset.fallbackSrc;">`;
 }
 
 function preloadAssignedRoleImages() {
@@ -1830,9 +1838,11 @@ function saveGodVoiceEnabled() {
 }
 
 function updateGodVoiceToggle() {
+    const label = godVoiceEnabled ? '🔊 上帝语音：开' : '🔇 上帝语音：关';
     const button = document.getElementById('god-voice-toggle');
-    if (!button) return;
-    button.textContent = godVoiceEnabled ? '🔊 上帝语音：开' : '🔇 上帝语音：关';
+    if (button) button.textContent = label;
+    const setupBtn = document.getElementById('setup-god-voice-toggle');
+    if (setupBtn) setupBtn.textContent = label;
 }
 
 function toggleGodVoice() {
@@ -1998,12 +2008,22 @@ function speakWitchTurnVoice(witch, totalWitches) {
     }
     if (!godVoiceEnabled || restoringGameSnapshot || typeof window === 'undefined') return;
     stopGodVoicePlayback();
+    duckNightAmbience(true);
     const ord = CHINESE_ORDINALS[witch?.witchOrder] || String(witch?.witchOrder || 1);
     const line = `${ord}号女巫请睁眼，烛火微明，请决定是否使用药水。`;
     const token = godVoicePlaybackToken;
-    speakUtterance(line, () => {
-        if (token !== godVoicePlaybackToken) return;
-    });
+    let settled = false;
+    const settle = () => {
+        if (settled || token !== godVoicePlaybackToken) return;
+        settled = true;
+        if (godVoiceSafetyTimerId) {
+            clearTimeout(godVoiceSafetyTimerId);
+            godVoiceSafetyTimerId = null;
+        }
+        duckNightAmbience(false);
+    };
+    godVoiceSafetyTimerId = setTimeout(settle, 6500);
+    speakUtterance(line, settle);
 }
 
 function speakGodLine(key, data = {}, onDone) {
@@ -2132,6 +2152,7 @@ function clearNightTransitionTimer() {
 }
 
 function showNightToDayTransition(seconds = 15) {
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
     clearNightPreludeTimer();
     clearNightRoleTimer();
     clearNightTransitionTimer();
@@ -2214,6 +2235,7 @@ function shouldShowNightPrelude(action) {
 }
 
 function showNightPrelude(nextAction, seconds = NIGHT_PRELUDE_SECONDS) {
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
     clearNightPreludeTimer();
     clearNightRoleTimer();
     gameState.nightPreludeNextAction = nextAction;
@@ -2274,6 +2296,9 @@ function nightRoleTimerHtml(seconds = NIGHT_ROLE_PHASE_SECONDS, noteText = text(
 }
 
 function targetActionLayoutHtml({ phaseText, phaseClass = 'night', infoHtml = '', timerHtml = '', targetLabel = '', wheelHtml = '', sideExtraHtml = '' }) {
+    const flipBar = phaseClass === 'night' && typeof renderNightFlipToolbarHtml === 'function'
+        ? renderNightFlipToolbarHtml()
+        : '';
     return `
         <div class="target-action-layout">
             <aside class="target-action-side">
@@ -2284,6 +2309,7 @@ function targetActionLayoutHtml({ phaseText, phaseClass = 'night', infoHtml = ''
                 ${sideExtraHtml}
             </aside>
             <section class="target-action-main">
+                ${flipBar}
                 ${wheelHtml}
             </section>
         </div>
@@ -2297,7 +2323,10 @@ function startNightRoleTimer(nextAction, seconds = NIGHT_ROLE_PHASE_SECONDS, opt
     gameState.nightRoleNextAction = nextAction;
     gameState.nightRoleTimerAutoAdvance = autoAdvance;
     gameState.nightRoleTimerDuration = options.duration ?? seconds;
-    gameState.nightRoleTimerRemaining = restoredTimerSeconds('nightRoleTimerRemaining', seconds);
+    const restoredSec = restoredTimerSeconds('nightRoleTimerRemaining', seconds);
+    gameState.nightRoleTimerRemaining = (restoringGameSnapshot && autoAdvance)
+        ? Math.max(1, restoredSec)
+        : restoredSec;
 
     renderNightRoleTimer();
     if (gameState.nightRoleTimerRemaining <= 0) {
@@ -2402,6 +2431,7 @@ function finishNightRoleTimer() {
 }
 
 function showNightRoleWait({ phaseTitle, prompt, nextAction, voiceKey, witchId = null }) {
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
     document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · ${phaseTitle.replace(/^🌙\s*/, '')}`;
     if (voiceKey === 'witchSlot' && witchId !== null) {
         const witch = getPlayerById(witchId);
@@ -2426,8 +2456,8 @@ function showNightRoleWait({ phaseTitle, prompt, nextAction, voiceKey, witchId =
         <button class="btn btn-ghost btn-block" onclick="finishNightRoleTimer()">${text('night.timer.skip')}</button>
     `;
 
-    startNightRoleTimer(nextAction, waitSeconds, { autoAdvance: true });
     setGameResumeView('nightWait', { phaseTitle, prompt, nextAction, voiceKey, witchId });
+    startNightRoleTimer(nextAction, waitSeconds, { autoAdvance: true });
 }
 
 function createInitialGameState(count) {
@@ -2470,6 +2500,7 @@ function clearGameTimers() {
 }
 
 function resetGame() {
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
     clearGameTimers();
     clearGameSnapshot();
     releaseWakeLock();
@@ -2480,6 +2511,19 @@ function resetGame() {
     renderNameInputs();
     updateConfigPreview();
     renderResumeBanner();
+}
+
+function openSetupFromResult() {
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
+    const setup = captureCurrentPlayerSetup();
+    clearGameTimers();
+    clearGameSnapshot();
+    releaseWakeLock();
+    gameState = createInitialGameState(setup.count);
+    applyPlayerSetupToInputs(setup);
+    if (typeof persistSetupRosterFromDOM === 'function') persistSetupRosterFromDOM();
+    updateConfigPreview();
+    showScreen('screen-setup');
 }
 
 function confirmReturnToSetup() {
@@ -2542,6 +2586,8 @@ function gameResumeRenderers() {
         daySpeech: () => showNextDaySpeech(),
         daySpeechComplete: () => showDaySpeechComplete(),
         vote: () => showNextVoter(),
+        voteBallot: () => openVoterBallot(),
+        voteSilenced: () => showNextVoter(),
         revoteIntro: () => renderRevoteIntro(),
         voteResult: (id, cause) => renderVoteResult(id, cause),
         exilePunishment: id => showExilePunishment(id),
@@ -2633,6 +2679,7 @@ function unescapeLegacyHtmlEntities(str) {
 }
 
 function restoreSavedGame() {
+    if (typeof unlockIpadAudioAndSpeech === 'function') unlockIpadAudioAndSpeech();
     const data = readGameSnapshot();
     if (!data) {
         renderResumeBanner();
@@ -2764,6 +2811,12 @@ function captureCurrentPlayerSetup() {
 
 function applyPlayerSetupToInputs(setup) {
     playerCount = setup.count;
+    [5, 6, 7, 8, 9, 10].forEach(n => {
+        const btn = document.getElementById(`btn-${n}p`);
+        if (btn) btn.className = playerCount === n ? 'btn btn-secondary btn-sm' : 'btn btn-ghost btn-sm';
+    });
+    const descEl = document.getElementById('selected-mode-desc');
+    if (descEl) descEl.textContent = getConfig(playerCount).desc;
     renderNameInputs();
 
     const inputs = Array.from(document.querySelectorAll('.name-input'));
@@ -2775,6 +2828,7 @@ function applyPlayerSetupToInputs(setup) {
             genders[index].textContent = player.gender === 'female' ? '👩' : '👨';
         }
     });
+    if (typeof persistSetupRosterFromDOM === 'function') persistSetupRosterFromDOM();
 }
 
 function restartGameSamePlayers() {
@@ -2794,6 +2848,7 @@ function restartGameSamePlayers() {
 // =====================================================
 
 function selectPlayerCount(count) {
+    if (typeof persistSetupRosterFromDOM === 'function') persistSetupRosterFromDOM();
     playerCount = count;
     gameState.playerCount = count;
 
@@ -2863,11 +2918,18 @@ function renderNameInputs() {
     const container = document.getElementById('name-inputs');
     container.innerHTML = '';
     for (let i = 0; i < playerCount; i++) {
+        const slot = typeof getInitialRosterSlot === 'function'
+            ? getInitialRosterSlot(i)
+            : { name: `玩家${i + 1}`, gender: 'male' };
+        const avatar = slot.gender === 'female' ? '👩' : '👨';
         const row = document.createElement('div');
         row.className = 'name-input-row';
         row.innerHTML = `
-            <button class="gender-toggle" data-index="${i}" data-gender="male" onclick="toggleGender(this)">👨</button>
-            <input type="text" class="name-input" placeholder="玩家${i + 1}名称" data-index="${i}" value="玩家${i + 1}">
+            <button type="button" class="gender-toggle" data-index="${i}" data-gender="${slot.gender}" onclick="toggleGender(this)">${avatar}</button>
+            <div class="name-input-wrap">
+                <input type="text" class="name-input" placeholder="座位${i + 1}昵称" data-index="${i}" value="${escapeHtml(slot.name)}" onfocus="if(this.select)this.select()" oninput="if(typeof persistSetupRosterFromDOM==='function')persistSetupRosterFromDOM()">
+                <button type="button" class="name-clear-btn" tabindex="-1" onclick="clearSingleNameInput(${i})" aria-label="清空">×</button>
+            </div>
         `;
         container.appendChild(row);
     }
@@ -2877,6 +2939,7 @@ function toggleGender(btn) {
     const isMale = btn.dataset.gender === 'male';
     btn.dataset.gender = isMale ? 'female' : 'male';
     btn.textContent = isMale ? '👩' : '👨';
+    if (typeof persistSetupRosterFromDOM === 'function') persistSetupRosterFromDOM();
 }
 
 // =====================================================
@@ -2963,6 +3026,9 @@ function setupGame(options = {}) {
             unluckyReason: '',
             revealed: false
         });
+    }
+    if (typeof persistRosterFromPlayers === 'function') {
+        persistRosterFromPlayers(gameState.players);
     }
 
     // 分配角色
@@ -3595,9 +3661,15 @@ let wakeLockSentinel = null;
 
 function acquireWakeLock() {
     try {
+        if (wakeLockSentinel && !wakeLockSentinel.released) return;
         if (typeof navigator === 'undefined' || !navigator.wakeLock || !navigator.wakeLock.request) return;
         navigator.wakeLock.request('screen').then(sentinel => {
             wakeLockSentinel = sentinel;
+            if (sentinel && typeof sentinel.addEventListener === 'function') {
+                sentinel.addEventListener('release', () => {
+                    if (wakeLockSentinel === sentinel) wakeLockSentinel = null;
+                });
+            }
         }).catch(() => { /* 低电量模式等场景会被拒绝，忽略 */ });
     } catch (e) { /* 不支持的浏览器静默降级 */ }
 }
@@ -4051,8 +4123,12 @@ function confirmTargetWheelSelection(action, command, arg) {
     const selectedId = getSelectedTargetForAction(action);
     const isExplicitSkip = (action === 'nightKill' && gameState.nightKillExplicitSkip)
         || (action === 'gargoyleKill' && gameState.gargoyleKillExplicitSkip);
-    if ((selectedId === null || selectedId === undefined) && !isExplicitSkip) {
-        alert('请先选择目标');
+    const witchHasAnyChoice = command === 'confirmWitchAction' && (
+        gameState.witchSaveTargets[gameState.currentWitchId] !== undefined
+        || gameState.witchPoisonTargets[gameState.currentWitchId] !== undefined
+    );
+    if ((selectedId === null || selectedId === undefined) && !isExplicitSkip && !witchHasAnyChoice) {
+        notifyPlayerPrompt('请先选择目标');
         return;
     }
 
@@ -4170,7 +4246,6 @@ function showNightGargoyleKill() {
                 <div class="alert-box">
                     <div class="title">${text('night.gargoyleKill.title')}</div>
                     <div class="text">${text('night.gargoyleKill.prompt')}</div>
-                    <div>${text('night.role.handoff', { name: gargoyle.name })}</div>
                 </div>
             `,
             timerHtml: nightRoleTimerHtml(),
@@ -4455,23 +4530,25 @@ function finishMindReadResult() {
 
 function showCheckResult(checkerType, checkerName, targetName, resultName, resultEmoji) {
     document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · ${checkerType}查验`;
+    const flipBar = typeof renderNightFlipToolbarHtml === 'function' ? renderNightFlipToolbarHtml() : '';
     document.getElementById('game-content').innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:20px;">
-            <div style="font-size:18px;color:var(--text-dim);margin-bottom:12px;">${checkerType} (${checkerName}) 查验结果</div>
-            <div style="font-size:80px;margin:20px 0;">${resultEmoji}</div>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:16px;">
+            ${flipBar}
+            <div style="font-size:18px;color:var(--text-dim);margin-bottom:10px;">${checkerType}查验结果</div>
+            <div style="font-size:72px;margin:14px 0;">${resultEmoji}</div>
             <div style="font-size:28px;font-weight:800;color:var(--accent-yellow);">${targetName} 是</div>
             <div style="font-size:32px;font-weight:800;color:var(--accent-green);margin-top:8px;">${resultName}</div>
-            <div style="font-size:14px;color:var(--text-dim);margin-top:20px;">仅${checkerType}知晓此信息</div>
-            <div style="width:min(420px,100%);margin-top:18px;">${nightRoleTimerHtml()}</div>
+            <div style="font-size:14px;color:var(--text-dim);margin-top:16px;">仅${checkerType}知晓 · 倒计时结束将自动隐藏并进入下一环节</div>
+            <div style="width:min(420px,100%);margin-top:14px;">${nightRoleTimerHtml(NIGHT_ROLE_PHASE_SECONDS, '倒计时归零自动收起结果，无需冒险伸手点确认。')}</div>
         </div>
     `;
 
     document.getElementById('game-bottom-bar').innerHTML = `
         <button class="btn btn-primary btn-block" onclick="finishNightRoleTimer()"
-            >✓ 确认并继续</button>
+            >✓ 已看完，立即收起</button>
     `;
-    startNightRoleTimer('checkResult');
     setGameResumeView('checkResult', checkerType, checkerName, targetName, resultName, resultEmoji);
+    startNightRoleTimer('checkResult', NIGHT_ROLE_PHASE_SECONDS, { autoAdvance: true });
 }
 
 function nextNightStep() {
@@ -4712,7 +4789,7 @@ function showNightWitch(witch, { preserveTimer = true } = {}) {
     `;
 
     document.getElementById('game-bottom-bar').innerHTML = `
-        <button class="btn btn-primary btn-block" onclick="confirmWitchAction()">${text('night.witch.confirm', { name: witch.name })}</button>
+        <button class="btn btn-primary btn-block" onclick="confirmWitchAction()">${text('night.witch.confirm')}</button>
         <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="skipWitchAction()">${text('night.witch.skip')}</button>
     `;
 
@@ -4764,7 +4841,7 @@ function confirmWitchAction() {
     const poisonTargetId = gameState.witchPoisonTargets[witch.id];
 
     if (witchSavePoisonExclusive && saveTargetId !== undefined && poisonTargetId !== undefined) {
-        alert('房规：同一夜不能同时使用解药和毒药，请重新选择（选一样会自动取消另一样）');
+        notifyPlayerPrompt('房规：同一夜不能同时使用解药和毒药，请重新选择');
         return;
     }
     clearNightRoleTimer();
@@ -4839,7 +4916,6 @@ function showNightGuardian() {
             infoHtml: `
                 <div class="info-box">
                     <div>${text('night.guardian.prompt')}</div>
-                    <div>${text('night.role.handoff', { name: guardian.name })}</div>
                     <div>${text('night.guardian.note')}</div>
                     ${guardian.guardedId !== null ? `<div>上一晚守护：${getPlayerById(guardian.guardedId)?.name || '无'}</div>` : ''}
                 </div>
@@ -5230,6 +5306,7 @@ function showDaySpeechComplete() {
 }
 
 function startDayPhase() {
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
     clearNightPreludeTimer();
     clearNightRoleTimer();
     clearNightTransitionTimer();
@@ -5613,29 +5690,53 @@ function applyDayCards() {
 function showNextVoter() {
     const alive = getAlivePlayers();
     if (gameState.voterIndex >= alive.length) {
-        // 所有玩家投票完成
         tallyVotes();
         return;
     }
 
     const voter = alive[gameState.voterIndex];
+    if (!restoringGameSnapshot) gameState.selectedTarget = null;
 
-    // 检查沉默
+    // 沉默之印跳票：明确提示跳过该座位，防止单台 iPad 顺手传机导致被沉默者误投下一位的选票
     if (voter.silencedToday) {
+        if (typeof showVoteSilencedPass === 'function') {
+            showVoteSilencedPass(voter);
+            return;
+        }
         log(`🤐 ${voter.name} 被沉默，跳过投票`, 'info');
         gameState.voterIndex++;
         showNextVoter();
         return;
     }
 
-    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}天 · 投票`;
+    if (typeof showVoteHandoffScreen === 'function') {
+        showVoteHandoffScreen(voter);
+        return;
+    }
+    openVoterBallot();
+}
+
+function openVoterBallot() {
+    const alive = getAlivePlayers();
+    if (gameState.voterIndex >= alive.length) {
+        tallyVotes();
+        return;
+    }
+    const voter = alive[gameState.voterIndex];
+    if (!voter) return;
+    if (voter.silencedToday) {
+        showNextVoter();
+        return;
+    }
+
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}天 · ${voter.name} 投票`;
 
     const targets = gameState.revoteCandidates
         ? alive.filter(p => gameState.revoteCandidates.includes(p.id))
         : alive;
     const cards = targets.map(p => `
         <div class="vote-candidate ${gameState.selectedTarget === p.id ? 'selected' : ''}" id="vote-${p.id}" onclick="selectVoteTarget(${voter.id}, ${p.id})">
-            <div class="player-avatar" style="font-size:28px;">${p.gender === 'female' ? '👩' : '👨'}</div>
+            <div class="player-avatar" style="font-size:26px;">${p.gender === 'female' ? '👩' : '👨'}</div>
             <div>
                 <div style="font-size:15px;font-weight:600;">${p.name}</div>
                 <div style="font-size:12px;color:var(--text-dim);">${text('vote.choiceHint')}</div>
@@ -5648,29 +5749,27 @@ function showNextVoter() {
         : '';
 
     document.getElementById('game-content').innerHTML = `
-        <div style="text-align:center;margin-bottom:16px;">
-            <span class="phase-badge day">${text('vote.phase')}</span>
-        </div>
-        <div class="info-box" style="text-align:center;">
-            <div class="handoff-prompt">${text('vote.handoff')}<span class="name">${voter.name}</span></div>
+        <div style="text-align:center;margin-bottom:10px;">
+            <span class="phase-badge day">${text('vote.phase')} · 仅限 ${voter.name} 本人操作</span>
         </div>
         ${mindReadBanner}
-        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;"
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;"
             >${text('vote.target')}</div>
-        ${cards}
+        <div class="vote-candidates-grid">${cards}</div>
     `;
 
     document.getElementById('game-bottom-bar').innerHTML = `
         <button class="btn btn-primary btn-block" onclick="confirmVote(${voter.id})"
             >${text('vote.confirm', { name: voter.name })}</button>
     `;
-    setGameResumeView('vote');
+    setGameResumeView('voteBallot');
 }
 
 function selectVoteTarget(voterId, targetId) {
     gameState.selectedTarget = targetId;
     document.querySelectorAll('.vote-candidate').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`vote-${targetId}`).classList.add('selected');
+    const chosenEl = document.getElementById(`vote-${targetId}`);
+    if (chosenEl) chosenEl.classList.add('selected');
     saveGameSnapshot();
 }
 
@@ -5843,18 +5942,24 @@ function showExilePunishment(playerId) {
 
     document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}天 · ${text('exile.punishment.title')}`;
     document.getElementById('game-content').innerHTML = `
-        <div style="text-align:center;padding:20px 0;">
+        <div style="text-align:center;padding:12px 0;">
             <span class="phase-badge day">${text('exile.punishment.title')}</span>
-            <div class="dawn-card killed" style="margin-top:16px;">
-                <div style="font-size:22px;font-weight:800;color:var(--accent-red);">${player.name}</div>
-                <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">被投票出局</div>
-            </div>
-            ${betrayerHtml}
-            <div class="privilege-action-reveal" style="margin-top:16px;text-align:left;">
-                <div class="eyebrow">${text('exile.punishment.title')}</div>
-                <div class="action-text">${escapeHtml(action)}</div>
-                <div class="note">完成惩罚后可发表 30 秒遗言并正常发动离场技能；若认怂跳过须付硬代价。</div>
-                ${widgetHtml}
+            <div class="exile-stage-layout" style="margin-top:12px;">
+                <div class="exile-stage-left">
+                    <div class="dawn-card killed" style="margin-bottom:12px;">
+                        <div style="font-size:22px;font-weight:800;color:var(--accent-red);">${player.name}</div>
+                        <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">被投票出局</div>
+                    </div>
+                    ${betrayerHtml}
+                </div>
+                <div class="exile-stage-right">
+                    <div class="privilege-action-reveal" style="margin-top:14px;text-align:left;">
+                        <div class="eyebrow">${text('exile.punishment.title')}</div>
+                        <div class="action-text">${escapeHtml(action)}</div>
+                        <div class="note">完成惩罚后可发表 30 秒遗言并正常发动离场技能；若认怂跳过须付硬代价。</div>
+                        ${widgetHtml}
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -6247,12 +6352,12 @@ function renderResultActions() {
     if (!bottomBar) return;
 
     bottomBar.innerHTML = `
-        <button class="btn btn-primary btn-block btn-lg" onclick="restartGameSamePlayers()">🔄 再来一局（保留名字）</button>
+        <button class="btn btn-primary btn-block btn-lg" onclick="restartGameSamePlayers()">🔄 再来一局（保留原班名单直接发牌）</button>
         <div style="display:flex;gap:8px;margin-top:8px;">
             <button class="btn btn-secondary" style="flex:1;" onclick="showGameLog()">📋 本局暗战复盘</button>
             <button class="btn btn-secondary" style="flex:1;" onclick="showPartyLeaderboardModal()">🏆 今晚总榜</button>
         </div>
-        <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="resetGame()">⚙️ 返回设置</button>
+        <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="openSetupFromResult()">⚙️ 调整车速/人数（保留已填名单）</button>
     `;
 }
 
@@ -6482,12 +6587,12 @@ async function initApp() {
 
 initApp();
 
-// 切回前台时重新申请 Wake Lock（切后台系统会自动释放）
+// 切回前台时重新申请 Wake Lock（切后台或下拉控制中心后系统可能释放，含终局惩罚读秒阶段）
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') saveGameSnapshot();
     if (document.visibilityState === 'visible'
         && gameState && gameState.players && gameState.players.length > 0
-        && gameState.phase !== PHASE.SETUP && gameState.phase !== PHASE.END) {
+        && gameState.phase !== PHASE.SETUP) {
         acquireWakeLock();
     }
 });

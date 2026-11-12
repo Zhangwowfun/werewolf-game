@@ -1,4 +1,4 @@
-const APP_VERSION = '2026.11.12-2';
+const APP_VERSION = '2026.11.12-3';
 const SCOPE_URL = new URL('./', self.registration.scope).href;
 const SCOPE_PATH = new URL(SCOPE_URL).pathname;
 const CACHE_PREFIX = `werewolf-pwa-${encodeURIComponent(SCOPE_PATH)}-`;
@@ -7,15 +7,19 @@ const APP_SHELL = [
   './',
   './index.html',
   './css/spicy-immersive.css',
+  './css/ipad-tabletop.css',
   './js/audio-fx.js',
   './js/spicy-prompts.js',
   './js/action-widgets.js',
   './js/opening-bluff.js',
   './js/exile-dawn-spicy.js',
   './js/party-awards.js',
+  './js/ipad-ergonomics.js',
   './content/game-text.md',
   './manifest.json',
   './icon.svg',
+  './icon-180.png',
+  './icon-512.png',
   './generated_roles_fast/villager_01.jpg',
   './generated_roles_fast/werewolf_01.jpg',
   './generated_roles_fast/prophet_01.jpg',
@@ -98,6 +102,12 @@ async function isValidCoreResponse(asset, response) {
   }
   if (asset.endsWith('icon.svg')) {
     return contentType.includes('image/svg+xml') && /<svg[\s>]/i.test(await response.clone().text());
+  }
+  if (asset.endsWith('.png')) {
+    const validType = contentType.includes('image/png') || contentType === '';
+    const bytes = new Uint8Array(await response.clone().arrayBuffer());
+    return validType && bytes.length > 8
+      && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
   }
   if (asset.endsWith('.jpg')) {
     if (!contentType.includes('image/jpeg')) return false;
