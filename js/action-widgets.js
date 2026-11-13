@@ -13,10 +13,12 @@ function extractActionRepCount(actionText) {
     const str = String(actionText || '');
     const match = str.match(/(\d+|[一二两三四五六七八九十]{1,2})\s*(?:圈|下|遍|个(?:深蹲|骚词|骚姿势))/);
     if (!match) return 0;
-    return parseTimeCount(match[1]);
+    const count = parseTimeCount(match[1]);
+    // 排除「舔一下手指」「走一圈」这类单次口语量词，仅 >=2 次才生成计次器
+    return count >= 2 ? count : 0;
 }
 
-function isPerPersonRelayAction(actionText) {
+function isPerPersonExplicitAction(actionText) {
     return /每人\s*(\d+|[一二两三四五六七八九十]{1,3})\s*(?:秒|分钟)/.test(String(actionText || ''));
 }
 
@@ -36,11 +38,17 @@ function initActionWidgetState({ contextKey, actorId = null, promptKey = '', act
         actionText,
         lockedFirstPartnerId
     });
-    const seconds = extractTimeLimitSeconds(actionText);
-    const isRelay = seconds > 0 && isPerPersonRelayAction(actionText);
-    const repCount = seconds > 0 ? 0 : extractActionRepCount(actionText);
-
+    const rawSeconds = extractTimeLimitSeconds(actionText);
+    const explicitPerPerson = rawSeconds > 0 && isPerPersonExplicitAction(actionText);
+    const sharedTurnRelay = rawSeconds > 0 && !explicitPerPerson
+        && destiny.partnerIds.length >= 2 && /轮流/.test(String(actionText || ''));
+    const isRelay = explicitPerPerson || sharedTurnRelay;
     const relayTotal = isRelay ? Math.max(destiny.partnerIds.length, 2) : 1;
+    const perPersonSec = sharedTurnRelay
+        ? Math.max(5, Math.round(rawSeconds / relayTotal))
+        : rawSeconds;
+    const repCount = rawSeconds > 0 ? 0 : extractActionRepCount(actionText);
+
     const widget = {
         contextKey,
         actorId,
@@ -51,10 +59,10 @@ function initActionWidgetState({ contextKey, actorId = null, promptKey = '', act
         partnerIds: destiny.partnerIds,
         canReroll: destiny.canReroll,
         partnerRerollUsed: false,
-        mode: seconds > 0 ? (isRelay ? 'relay' : 'countdown') : (repCount > 0 ? 'counter' : 'none'),
+        mode: rawSeconds > 0 ? (isRelay ? 'relay' : 'countdown') : (repCount > 0 ? 'counter' : 'none'),
         started: false,
-        perPersonSec: seconds,
-        remainingSec: seconds,
+        perPersonSec,
+        remainingSec: perPersonSec,
         relayIndex: 0,
         relayTotal,
         targetCount: repCount,

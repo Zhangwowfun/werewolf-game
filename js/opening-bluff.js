@@ -58,6 +58,19 @@ function handleSetupStartClick() {
     const genders = Array.from(document.querySelectorAll('.gender-toggle'));
     const hasFemale = genders.slice(0, playerCount).some(btn => btn.dataset.gender === 'female');
     if (mode === 'female_only' && !hasFemale) {
+        if (typeof openAppConfirmDialog === 'function') {
+            openAppConfirmDialog({
+                title: '当前没有女性头像玩家',
+                message: '当前所有玩家头像都是男性，「仅女生领卡」模式下本局将没有特权卡和大冒险。\n\n点「切换全员发卡并开局」立即人手一张开玩；\n点「返回改性别」留在设置页点击头像切换男女。',
+                confirmText: '切换全员发卡并开局',
+                cancelText: '返回改性别',
+                onConfirm: () => {
+                    setCardDealMode('all');
+                    setupGame({ useMergedOpening: true });
+                }
+            });
+            return;
+        }
         const switchAll = confirm('当前所有玩家头像都是男性，「仅女生领卡」模式下本局将没有特权卡和大冒险。\n\n点「确定」自动切换为【全员人手一张特权卡】直接开局；\n点「取消」留在设置页点头像改性别。');
         if (!switchAll) return;
         setCardDealMode('all');
@@ -104,42 +117,49 @@ function startMergedOpeningFlow() {
     showOpeningPass(0);
 }
 
+function shouldShowUnifiedDecoyControls(player) {
+    if (player && player.hasCard) return true;
+    // 随机半数发卡下，谁拿了特权卡不公开，无卡玩家松手后也展示完全相同的网格与三键作为防窥障眼法
+    return getCardDealMode() === 'random_half';
+}
+
 function buildOpeningCardPreviewHtml(player, card) {
     const needsTarget = card ? cardNeedsTarget(card) : false;
-    const targets = card && needsTarget ? getCardActivationTargets(player) : [];
-    const targetGridHtml = card && needsTarget ? `
-        <div class="card-title" style="margin-top:8px;">点选特权卡作用目标（卡名已隐藏防偷看）</div>
+    const unifiedControls = shouldShowUnifiedDecoyControls(player);
+    const targets = unifiedControls ? (card && needsTarget ? getCardActivationTargets(player) : gameState.players) : [];
+    const targetGridHtml = unifiedControls ? `
+        <div class="card-title" style="margin-top:6px;">点选 1 名座位（防旁人看穿版式与手势次数）</div>
         <div class="player-grid">${targets.map(p => playerCardHtml(p, 'cardActivation')).join('')}</div>
     ` : '';
     const secretCardHtml = card ? `
         <div class="privilege-card-display" style="margin-top:10px;">
             <div class="label">专属暗置特权卡（松手即隐藏）</div>
             <div class="name">${card.emoji} ${card.name}</div>
-            <div class="desc">${card.desc}</div>
+            <div class="desc">${card.desc}${needsTarget ? '' : '（本卡无需指定他人，松手后若激活请随意点选 1 个座位做障眼法）'}</div>
         </div>
-    ` : `<div class="info-box" style="margin-top:10px;font-size:13px;">本局你未持有特权卡。记住身份后松手隐藏，点底部按钮传给下一位。</div>`;
-    // 松手后的外部面板绝不明文显示特权卡名或效果，彻底防止大屏 iPad 邻座余光泄密
-    const panelHtml = card ? `
-        <div class="info-box" style="margin-bottom:8px;font-size:13px;">
-            <div><strong>暗置特权决策</strong>（卡名已隐藏，忘词可再次按住上方圆圈重看）</div>
-            <div style="margin-top:4px;color:var(--accent-gold);">${needsTarget ? '请先在下方点选 1 名作用目标，再点底部按钮选择「真激活 / 空城计 / 放弃」。' : '本卡无需选择目标，请直接在底部按钮选择「真激活 / 空城计 / 放弃」。'}</div>
+    ` : `<div class="info-box" style="margin-top:10px;font-size:13px;">本局你未持有特权卡。${unifiedControls ? '松手后直接点最右侧按钮（或随意点 1 个座位再点任意按钮）传给下一位，不会触发公开动作。' : '记住身份后松手隐藏，点底部按钮传给下一位。'}</div>`;
+    // 松手后的外部面板统一网格与文案结构，绝不因有无目标卡或随机半数无卡泄露阵营/持卡范围
+    const panelHtml = unifiedControls ? `
+        <div class="info-box" style="margin-bottom:6px;font-size:13px;">
+            <div><strong>暗置操作区</strong>（身份与卡面已隐藏，忘词可再次按住上方圆圈重看）</div>
+            <div style="margin-top:3px;color:var(--accent-gold);">若选择前两项，请先在下方点选 1 名座位，再点击底部按钮完成交接。</div>
         </div>
         ${targetGridHtml}
     ` : `<div class="info-box" style="margin-bottom:8px;font-size:13px;color:var(--text-dim);">身份已确认并隐藏。请点击底部按钮后再将 iPad 递给下一位玩家。</div>`;
     return { secretCardHtml, panelHtml };
 }
 
-function renderHoldPeekMaskHtml(unlocked, hasCard) {
+function renderHoldPeekMaskHtml(unlocked) {
     if (unlocked) {
         return `
             <div class="hold-peek-ring peeked" id="hold-peek-ring">按住重看</div>
             <div style="font-size:14px;color:var(--accent-green);font-weight:700;">✓ 已查看并隐藏底牌</div>
-            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">请先点下方按钮完成操作，再把 iPad 传给下一位</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">请先点下方完成操作，再把 iPad 传给下一位</div>
         `;
     }
     return `
         <div class="hold-peek-ring" id="hold-peek-ring">按住看底牌</div>
-        <div style="font-size:14px;color:var(--text-secondary);">拇指按住圆圈不放查看身份${hasCard ? '与暗置卡' : ''}</div>
+        <div style="font-size:14px;color:var(--text-secondary);">拇指按住圆圈不放查看本人底牌</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">仅圆圈响应按住防交接误触 · 松手立即黑屏隐藏</div>
     `;
 }
@@ -170,7 +190,7 @@ function showOpeningPass(index) {
         <div class="hold-peek-card" id="hold-peek-box" oncontextmenu="return false;" ondragstart="return false;">
             <div class="hold-peek-mask" id="hold-peek-mask"
                 onpointerdown="beginHoldPeekPress(${index}, event)">
-                ${renderHoldPeekMaskHtml(unlocked, Boolean(card))}
+                ${renderHoldPeekMaskHtml(unlocked)}
             </div>
             <div class="hold-peek-secret">
                 ${roleImageHtml(player, 'role-image-big')}
@@ -197,7 +217,7 @@ function renderOpeningPassBottomBar(index, unlocked) {
         return;
     }
     const isLast = index === gameState.players.length - 1;
-    if (!player.hasCard) {
+    if (!shouldShowUnifiedDecoyControls(player)) {
         nav.innerHTML = `
             <button class="btn btn-primary btn-block btn-lg" onclick="advanceOpeningPass(${index})">
                 ${isLast ? '我已记住身份，进入下一步' : '我已记住身份，传给下一位'}
@@ -209,7 +229,7 @@ function renderOpeningPassBottomBar(index, unlocked) {
         <div class="opening-choice-btn-group">
             <button class="btn btn-primary btn-block" onclick="submitOpeningCardChoice(${index}, 'real')">真激活（首轮生效，稍后做公开动作）</button>
             <button class="btn btn-secondary btn-block" style="border-color:var(--accent-gold);color:var(--accent-gold);" onclick="submitOpeningCardChoice(${index}, 'bluff')">虚晃一枪·空城计（首轮演戏，藏到第2轮生效）</button>
-            <button class="btn btn-ghost btn-block" onclick="submitOpeningCardChoice(${index}, 'skip')">低调放弃特权卡，${isLast ? '进入下一步' : '传给下一位'}</button>
+            <button class="btn btn-ghost btn-block" onclick="submitOpeningCardChoice(${index}, 'skip')">不发动 / 无卡，${isLast ? '进入下一步' : '传给下一位'}</button>
         </div>
     `;
 }
@@ -251,9 +271,7 @@ function revealUnlockedOpeningControls(index) {
     if (!player) return;
     const mask = typeof document !== 'undefined' ? document.getElementById('hold-peek-mask') : null;
     if (mask) {
-        const isCaptured = false;
-        void isCaptured;
-        mask.innerHTML = renderHoldPeekMaskHtml(true, Boolean(player.hasCard));
+        mask.innerHTML = renderHoldPeekMaskHtml(true);
     }
     const panel = typeof document !== 'undefined' ? document.getElementById('opening-card-decision-panel') : null;
     if (panel) panel.style.display = 'block';
@@ -304,7 +322,16 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 function submitOpeningCardChoice(index, mode) {
     if (typeof unlockIpadAudioAndSpeech === 'function') unlockIpadAudioAndSpeech();
     const holder = gameState.players[index];
-    if (!holder || !holder.hasCard) {
+    if (!holder) {
+        advanceOpeningPass(index);
+        return;
+    }
+    if (!holder.hasCard) {
+        if (mode !== 'skip' && gameState.selectedTarget === null && shouldShowUnifiedDecoyControls(holder)) {
+            notifyPlayerPrompt('请先在上方点选 1 名座位（或直接点右侧「不发动 / 无卡」）');
+            return;
+        }
+        gameState.selectedTarget = null;
         advanceOpeningPass(index);
         return;
     }
@@ -320,8 +347,8 @@ function submitOpeningCardChoice(index, mode) {
     }
 
     const needsTarget = cardNeedsTarget(holder.card);
-    if (needsTarget && gameState.selectedTarget === null) {
-        notifyPlayerPrompt('请先点击选择特权卡的目标玩家');
+    if (gameState.selectedTarget === null) {
+        notifyPlayerPrompt('请先在上方点选 1 名座位，再点下方按钮');
         return;
     }
     if (needsTarget && !getCardActivationTargets(holder).some(p => p.id === gameState.selectedTarget)) {

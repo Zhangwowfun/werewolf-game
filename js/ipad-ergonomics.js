@@ -91,17 +91,55 @@ function clearSingleNameInput(index) {
     const target = inputs[index];
     if (!target) return;
     target.value = '';
+    if (target.dataset) target.dataset.justFocused = '0';
     persistSetupRosterFromDOM();
     if (typeof target.focus === 'function') target.focus();
+    if (target.dataset) target.dataset.justFocused = '0';
+}
+
+// 兼容 iPadOS WebKit 触屏点击输入框：防止首次点击抬手 mouseup 取消全选，同时允许已聚焦后二次点击改单字
+function handleNameInputFocus(input) {
+    if (!input) return;
+    if (input.dataset) input.dataset.justFocused = '1';
+    if (typeof input.select === 'function') {
+        try { input.select(); } catch (e) { /* 忽略 */ }
+    }
+    setTimeout(() => {
+        if (input && typeof input.select === 'function' && input.dataset && input.dataset.justFocused === '1') {
+            try { input.select(); } catch (e) { /* 忽略 */ }
+        }
+    }, 0);
+    setTimeout(() => {
+        if (input && input.dataset) input.dataset.justFocused = '0';
+    }, 280);
+}
+
+function handleNameInputMouseUp(event, input) {
+    if (!input || !input.dataset) return;
+    if (input.dataset.justFocused === '1') {
+        input.dataset.justFocused = '0';
+        if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+        }
+        if (typeof input.select === 'function') {
+            try { input.select(); } catch (e) { /* 忽略 */ }
+        }
+    }
 }
 
 function resetSavedRosterToDefault() {
-    if (!confirm('要将玩家昵称与性别全部恢复为默认「玩家1~玩家N（男）」吗？')) return;
-    try {
-        if (typeof localStorage !== 'undefined') localStorage.removeItem(ROSTER_STORAGE_KEY);
-    } catch (e) { /* 忽略 */ }
-    renderNameInputs();
-    updateConfigPreview();
+    openAppConfirmDialog({
+        title: '恢复默认座次名单',
+        message: '要将玩家昵称与性别全部恢复为默认「玩家1～玩家N（男）」吗？',
+        confirmText: '确认恢复默认',
+        onConfirm: () => {
+            try {
+                if (typeof localStorage !== 'undefined') localStorage.removeItem(ROSTER_STORAGE_KEY);
+            } catch (e) { /* 忽略 */ }
+            renderNameInputs();
+            updateConfigPreview();
+        }
+    });
 }
 
 // 桌面平放 iPad 时供对面座位玩家一键静音旋转画面 180°（进入闭眼过渡或天亮自动复位，不留朝向痕迹）
@@ -142,17 +180,21 @@ function renderNightFlipToolbarHtml() {
     `;
 }
 
-// 夜间深色页内轻提示：杜绝黑夜弹出苹果原生刺眼纯白 alert() 照亮神职脸部
+// 全阶段深色页内轻提示与深色确认弹窗：杜绝弹出系统原生白色 alert()/confirm() 照脸、阻塞读秒或无法随 180° 翻转
+let pendingAppConfirmAction = null;
+
 function notifyPlayerPrompt(message) {
-    const inNight = typeof gameState !== 'undefined' && gameState.phase === PHASE.NIGHT;
-    if (!inNight || typeof document === 'undefined') {
+    if (typeof document === 'undefined' || !document.createElement) {
         alert(message);
         return;
     }
     const host = document.getElementById('app-root') || document.body;
-    if (!host || !document.createElement) return;
+    if (!host || !host.appendChild) {
+        alert(message);
+        return;
+    }
     let toast = document.getElementById('night-inline-toast');
-    if (!toast) {
+    if (!toast || !toast.classList) {
         toast = document.createElement('div');
         toast.id = 'night-inline-toast';
         toast.className = 'night-inline-toast';
@@ -163,7 +205,44 @@ function notifyPlayerPrompt(message) {
     if (nightToastTimerId) clearTimeout(nightToastTimerId);
     nightToastTimerId = setTimeout(() => {
         if (toast && toast.classList) toast.classList.remove('visible');
-    }, 2200);
+    }, 2400);
+}
+
+function openAppConfirmDialog({ title = '请确认操作', message = '', confirmText = '确定', cancelText = '取消', danger = false, onConfirm = null }) {
+    if (typeof showModal !== 'function' || typeof document === 'undefined' || !document.body) {
+        if (confirm(message)) {
+            if (typeof onConfirm === 'function') onConfirm();
+        }
+        return;
+    }
+    const overlay = document.getElementById('modal-overlay');
+    if (!overlay || !overlay.classList || typeof overlay.classList.add !== 'function') {
+        if (confirm(message) && typeof onConfirm === 'function') onConfirm();
+        return;
+    }
+    pendingAppConfirmAction = onConfirm;
+    const safeLines = String(message || '')
+        .split('\n')
+        .map(line => (typeof escapeHtml === 'function' ? escapeHtml(line) : line))
+        .join('<br>');
+    const safeTitle = typeof escapeHtml === 'function' ? escapeHtml(title) : title;
+    const safeConfirm = typeof escapeHtml === 'function' ? escapeHtml(confirmText) : confirmText;
+    const safeCancel = typeof escapeHtml === 'function' ? escapeHtml(cancelText) : cancelText;
+    showModal(`
+        <div class="modal-title">${safeTitle}</div>
+        <div style="font-size:14px;color:var(--text-secondary);line-height:1.65;margin-bottom:18px;text-align:left;">${safeLines}</div>
+        <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'} btn-block" onclick="resolveAppConfirmDialog(true)">${safeConfirm}</button>
+        <button type="button" class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="resolveAppConfirmDialog(false)">${safeCancel}</button>
+    `);
+}
+
+function resolveAppConfirmDialog(accepted) {
+    const fn = pendingAppConfirmAction;
+    pendingAppConfirmAction = null;
+    if (typeof hideModal === 'function') hideModal();
+    if (accepted && typeof fn === 'function') {
+        fn();
+    }
 }
 
 // 统一在用户真实触屏手势中解锁 iPadOS Safari 的 AudioSession、WebAudio、单例 MP3 与 speechSynthesis

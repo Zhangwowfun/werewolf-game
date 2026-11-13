@@ -47,9 +47,16 @@ function ensureExileBetrayerState(victimId) {
     return state;
 }
 
+function exilePunishmentNeedsPartner() {
+    const action = gameState.pendingExilePunishment || '';
+    const promptKey = gameState.pendingExilePunishmentKey || '';
+    return inferPartnerCountFromText(action, promptKey) > 0;
+}
+
 function renderExileBetrayerSnipeHtml(victimId) {
     const state = ensureExileBetrayerState(victimId);
     if (!state.canSnipe) return '';
+    const needsPartner = exilePunishmentNeedsPartner();
 
     if (!state.resolved) {
         const candidates = (gameState.actualVoterIds || [])
@@ -61,11 +68,14 @@ function renderExileBetrayerSnipeHtml(victimId) {
                 赌 ${p.name}
             </button>
         `).join('');
+        const subDesc = needsPartner
+            ? '点 1 名刚才参与投票的玩家！猜中 TA 投了你，直接锁定 TA 上台配合受罚（拒绝配合须替你连干 2 杯酒）；猜错当众帮 TA 洗清冲票嫌疑！'
+            : '点 1 名刚才参与投票的玩家！本条为单人惩罚无需搭档：猜中 TA 投了你，真凶当场陪喝 1 杯罚酒；猜错当众帮 TA 洗清冲票嫌疑！';
         return `
             <div class="betrayer-snipe-card">
-                <div style="font-size:14px;font-weight:800;color:#f4b2a4;">处决台复仇盲狙：抓背刺真凶陪罚</div>
+                <div style="font-size:14px;font-weight:800;color:#f4b2a4;">处决台复仇盲狙：抓背刺真凶</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
-                    点 1 名刚才参与投票的玩家！猜中 TA 投了你，直接锁定 TA 上台配合受罚（或替你连干 2 杯酒）；猜错当众帮 TA 洗清冲票嫌疑！
+                    ${subDesc}
                 </div>
                 <div class="betrayer-snipe-grid">${btns}</div>
             </div>
@@ -77,14 +87,18 @@ function renderExileBetrayerSnipeHtml(victimId) {
     if (state.hit && guessed) {
         return `
             <div class="betrayer-result-banner hit">
-                抓获背刺真凶！<strong>${guessed.name}</strong> 刚才真的投了你！已锁定为头号配合搭档（拒绝配合须替你连罚 2 杯酒）。
+                ${needsPartner
+                    ? `抓获背刺真凶！<strong>${guessed.name}</strong> 刚才真的投了你！已锁定为头号配合搭档（拒绝配合须替你连罚 2 杯酒）。`
+                    : `抓获背刺真凶！<strong>${guessed.name}</strong> 刚才真的投了你，当场陪喝 1 杯罚酒！`}
             </div>
         `;
     }
     return `
         <div class="betrayer-result-banner miss">
             冤枉好人！<strong>${guessed ? guessed.name : ''}</strong> 本轮并未投你，当众洗清冲票嫌疑！
-            ${locked ? `系统已从真投你的凶手里随机揪出 <strong>${locked.name}</strong> 上台配合！` : '（本轮其他玩家均未投你）'}
+            ${needsPartner
+                ? (locked ? `系统已从真投你的凶手里随机揪出 <strong>${locked.name}</strong> 上台配合！` : '（本轮其他玩家均未投你）')
+                : ''}
         </div>
     `;
 }
@@ -96,6 +110,7 @@ function resolveExileBetrayerSnipe(victimId, guessedId) {
     const guessed = getPlayerById(guessedId);
     if (!victim || !guessed) return;
 
+    const needsPartner = exilePunishmentNeedsPartner();
     const otherTrueBetrayers = (gameState.actualVoterIds || [])
         .filter(id => id !== victimId && gameState.voteHistory && gameState.voteHistory[id] === victimId);
     const isHit = otherTrueBetrayers.includes(guessedId);
@@ -104,17 +119,49 @@ function resolveExileBetrayerSnipe(victimId, guessedId) {
     state.guessedId = guessedId;
     state.hit = isHit;
     if (isHit) {
-        state.lockedPartnerId = guessedId;
+        state.lockedPartnerId = needsPartner ? guessedId : null;
         guessed.unluckyCount = (guessed.unluckyCount || 0) + 1;
+        if (!needsPartner) {
+            guessed.drinksCount = Math.round(((guessed.drinksCount || 0) + 1) * 10) / 10;
+        }
         playCountdownGong();
-        log(`处决盲狙命中：${victim.name} 当场抓获投TA的 ${guessed.name} 上台陪罚`, 'info');
+        log(`处决盲狙命中：${victim.name} 当场抓获投TA的 ${guessed.name} ${needsPartner ? '上台陪罚' : '陪喝1杯罚酒'}`, 'info');
     } else {
-        state.lockedPartnerId = otherTrueBetrayers.length > 0 ? randomItem(otherTrueBetrayers) : null;
+        state.lockedPartnerId = needsPartner && otherTrueBetrayers.length > 0 ? randomItem(otherTrueBetrayers) : null;
         log(`处决盲狙落空：${guessed.name} 本轮未投 ${victim.name}，洗清嫌疑`, 'info');
     }
 
-    // 重建互动搭档面板，将抓到的真凶锁为 1 号搭档
-    gameState.activeActionWidget = null;
+    // 保留已跑秒表、已点计次与「限1次换搭档」状态，仅将锁定真凶平滑并入搭档首位
+    const prevWidget = gameState.activeActionWidget;
+    if (prevWidget && prevWidget.contextKey === 'exile') {
+        const wasRunning = prevWidget.started;
+        clearActionWidgetTimer();
+        let nextPartners = Array.isArray(prevWidget.partnerIds) ? [...prevWidget.partnerIds] : [];
+        if (needsPartner && state.lockedPartnerId !== null && nextPartners.length > 0) {
+            const withoutLocked = nextPartners.filter(id => id !== state.lockedPartnerId);
+            nextPartners = [state.lockedPartnerId, ...withoutLocked].slice(0, nextPartners.length);
+        }
+        const canStillReroll = nextPartners.length > (state.lockedPartnerId !== null ? 1 : 0);
+        gameState.activeActionWidget = {
+            ...prevWidget,
+            lockedFirstPartnerId: state.lockedPartnerId,
+            partnerIds: nextPartners,
+            canReroll: canStillReroll,
+            started: false
+        };
+        restoringGameSnapshot = true;
+        try {
+            showExilePunishment(victimId);
+        } finally {
+            restoringGameSnapshot = false;
+        }
+        if (wasRunning && gameState.activeActionWidget.remainingSec > 0) {
+            toggleActionWidgetTimer('exile-punishment-countdown');
+        }
+        saveGameSnapshot();
+        return;
+    }
+
     showExilePunishment(victimId);
 }
 
@@ -133,12 +180,9 @@ function completeExilePunishmentDone(playerId) {
     renderVoteResult(playerId, 'vote');
 }
 
-function cowardSkipExilePunishment(playerId) {
+function executeCowardSkipExilePunishment(playerId) {
     const player = getPlayerById(playerId);
     if (!player) return;
-    const ok = confirm(`确定选择「认怂不做」吗？\n\n认怂代价：\n1. ${player.rawName || player.name} 当场自罚 2 杯酒（可换脱1件外衣/鞋袜）\n2. 直接剥夺本轮 30 秒遗言（立即闭嘴）\n3. 若底牌是猎人，本局猎枪直接哑火作废！`);
-    if (!ok) return;
-
     clearActionWidgetTimer();
     clearTimedActionCountdown();
     player.drinksCount = Math.round(((player.drinksCount || 0) + 2) * 10) / 10;
@@ -154,6 +198,25 @@ function cowardSkipExilePunishment(playerId) {
     gameState.pendingExilePunishmentKey = '';
     gameState.pendingExilePunishmentPlayerId = null;
     afterVote();
+}
+
+function cowardSkipExilePunishment(playerId) {
+    const player = getPlayerById(playerId);
+    if (!player) return;
+    const msg = `确定选择「认怂不做」吗？\n\n认怂代价：\n1. ${player.rawName || player.name} 当场自罚 2 杯酒（可换脱1件外衣/鞋袜）\n2. 直接剥夺本轮 30 秒遗言（立即闭嘴）\n3. 若底牌是猎人，本局猎枪直接哑火作废！`;
+    if (typeof openAppConfirmDialog === 'function') {
+        openAppConfirmDialog({
+            title: '确认认怂跳过惩罚？',
+            message: msg,
+            confirmText: '认怂受罚，直接跳过',
+            cancelText: '返回继续做动作',
+            danger: true,
+            onConfirm: () => executeCowardSkipExilePunishment(playerId)
+        });
+        return;
+    }
+    if (!confirm(msg)) return;
+    executeCowardSkipExilePunishment(playerId);
 }
 
 function getBlindFlirtNightHintHtml() {

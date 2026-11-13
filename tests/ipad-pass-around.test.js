@@ -213,3 +213,207 @@ test('I6. iPadOS 手势语音预热、10人双女巫压低篝火背景音与 PNG
     assert.ok(swText.includes("'./css/ipad-tabletop.css'"));
     assert.ok(swText.includes("'./js/ipad-ergonomics.js'"));
 });
+
+test('I7. 开局传机防余光与防手势数步数推理：无目标特权卡与随机半数无卡玩家均展示统一10人网格与三键', () => {
+    const h = createHarness();
+    h.sandbox.selectPlayerCount(10);
+    h.sandbox.setCardDealMode('all');
+    h.sandbox.setupGame({ useMergedOpening: true });
+
+    // 赋予 0 号「迷雾」（无需目标的狼人卡）、1 号「沉默之印」（需目标卡）
+    h.sandbox.__exec(`
+        gameState.players[0].card = PRIVILEGE_CARDS.MIST;
+        gameState.players[1].card = PRIVILEGE_CARDS.SILENCE_SEAL;
+    `);
+    h.sandbox.showOpeningPass(0);
+    h.sandbox.startHoldPeek(0);
+    h.sandbox.endHoldPeek();
+    const mistPanel = h.getEl('role-reveal-content').innerHTML;
+    assert.ok(mistPanel.includes('class="player-grid"'), '无目标卡（迷雾/女巫药水等）松手后也必须展示统一座位网格防暴露狼巫范围');
+
+    // 未点选障眼法座位直接点真激活应被统一提示拦截（保证点击次数一致，且不弹原生 alert）
+    h.sandbox.submitOpeningCardChoice(0, 'real');
+    assert.equal(h.alerts.length, 0, '开局未选座位提示不得调用原生 alert');
+    assert.equal(h.sandbox.__get('gameState.openingPassIndex'), 0, '无目标卡也须先点1次座位障眼法再推进，保证与好人卡点击次数一致');
+    h.sandbox.selectTarget(3, 'cardActivation');
+    h.sandbox.submitOpeningCardChoice(0, 'real');
+    assert.equal(h.sandbox.__get('gameState.players[0].cardTargetId'), null, '无目标卡后台不应保存障眼法目标');
+    assert.equal(h.sandbox.__get('gameState.openingPassIndex'), 1);
+
+    // 随机半数发卡模式：交接遮罩不写「与暗置卡」，无卡玩家松手也有统一网格与三键
+    h.sandbox.setCardDealMode('random_half');
+    h.sandbox.setupGame({ useMergedOpening: true });
+    const cardlessIdx = h.sandbox.__get('gameState.players.findIndex(p => !p.hasCard)');
+    const cardHolderIdx = h.sandbox.__get('gameState.players.findIndex(p => p.hasCard)');
+    h.sandbox.showOpeningPass(cardHolderIdx);
+    assert.ok(!h.getEl('role-reveal-content').innerHTML.includes('与暗置卡'), '交接遮罩文案不能暴露下家是否持卡');
+    h.sandbox.showOpeningPass(cardlessIdx);
+    h.sandbox.startHoldPeek(cardlessIdx);
+    h.sandbox.endHoldPeek();
+    assert.ok(h.getEl('role-reveal-content').innerHTML.includes('class="player-grid"'), '随机半数模式下无卡玩家松手也应展示统一座位网格');
+    assert.ok(h.getEl('role-nav').innerHTML.includes('opening-choice-btn-group'), '随机半数模式下无卡玩家底部也应展示三键防窥');
+});
+
+test('I8. 10人双女巫切换自动重置毒药转盘角度，杜绝二号女巫看到一号女巫毒口金框', () => {
+    const h = createHarness();
+    h.sandbox.selectPlayerCount(10);
+    h.sandbox.setupGame({ useMergedOpening: true });
+    h.sandbox.startNightPhase();
+
+    h.sandbox.__exec(`
+        gameState.nightKillTarget = null;
+        gameState.nightPreludeBypassAction = 'witch';
+        startWitchPhase();
+    `);
+    // 一号女巫拖动毒药转盘到 -270 度（6号位）并确认下毒
+    h.sandbox.setTargetWheelRotation('witchPoison', -270);
+    h.sandbox.selectWitchPoison(5);
+    h.sandbox.confirmWitchAction();
+    // 跳过 6 秒过渡进入二号女巫
+    h.sandbox.finishNightPrelude();
+    assert.equal(h.sandbox.getTargetWheelRotation('witchPoison'), -90, '切换二号女巫时毒药转盘必须重置回默认 -90 度（1号位）');
+});
+
+test('I9. 私密子页（选票/离场/查验结果）崩溃读档一律回退防窥遮罩，且夜间读档自动恢复篝火背景音', () => {
+    const h = createHarness();
+    h.sandbox.selectPlayerCount(6);
+    h.sandbox.setupGame({ useMergedOpening: true });
+    h.sandbox.startNightPhase();
+
+    // 1) 查验结果页读档：保留 checkResult 阶段但隐藏真实身份字样，并恢复夜间背景音
+    h.sandbox.showCheckResult('预言家', '玩家1', '玩家2', '普通狼人', '🐺');
+    const snapCheck = h.storage.get('werewolf-game-snapshot');
+    const hCheck = createHarness();
+    let ambienceRestored = false;
+    hCheck.sandbox.__exec('const _origAmb = startNightAmbience; startNightAmbience = function() { globalThis.__ambCalled = true; return _origAmb(); };');
+    hCheck.storage.set('werewolf-game-snapshot', snapCheck);
+    hCheck.sandbox.restoreSavedGame();
+    ambienceRestored = Boolean(hCheck.sandbox.__get('Boolean(globalThis.__ambCalled)'));
+    assert.equal(ambienceRestored, true, '夜晚子阶段读档恢复后必须重开篝火心跳背景音');
+    assert.ok(!hCheck.getEl('game-content').innerHTML.includes('普通狼人'), '查验结果页读档恢复绝不能当众亮出刚查到的具体身份');
+
+    // 2) 白天打开选票看到心声聆听时读档：必须回退到投票交接遮罩页
+    h.sandbox.__exec(`
+        gameState.players[0].mindReadSummary = '本夜 玩家5 查验了你。';
+        startDayPhase();
+        startVotePhase();
+        openVoterBallot();
+    `);
+    const snapVote = h.storage.get('werewolf-game-snapshot');
+    const hVote = createHarness();
+    hVote.storage.set('werewolf-game-snapshot', snapVote);
+    hVote.sandbox.restoreSavedGame();
+    assert.equal(hVote.sandbox.__get('gameState.resumeView.key'), 'vote', '打开选票中途读档必须回退到投票交接遮罩');
+    assert.ok(!hVote.getEl('game-content').innerHTML.includes('本夜 玩家5 查验了你'), '读档恢复瞬间不得裸露心声聆听结果');
+
+    // 3) 白天猎人离场私密页读档：必须回退到离场交接遮罩页
+    const hunterId = h.sandbox.__get('gameState.players.find(p => p.roleKey === "hunter").id');
+    h.sandbox.__exec(`
+        const hunter = getPlayerById(${hunterId});
+        hunter.alive = false;
+        showEliminationPrivate(${hunterId});
+    `);
+    const snapElim = h.storage.get('werewolf-game-snapshot');
+    const hElim = createHarness();
+    hElim.storage.set('werewolf-game-snapshot', snapElim);
+    hElim.sandbox.restoreSavedGame();
+    assert.equal(hElim.sandbox.__get('gameState.resumeView.key'), 'eliminationHandoff', '离场私密页读档必须回退到交接遮罩页');
+});
+
+test('I10. 邻座词条不乱点跨桌搭档、单次量词不出0/1计次器、轮流词条均摊接力秒数、后点盲狙保留秒表与换人锁', () => {
+    const h = createHarness();
+    h.sandbox.selectPlayerCount(6);
+    h.sandbox.setupGame({ useMergedOpening: true });
+
+    // 1) 右边玩家词条（partners: 0）不应抽跨桌搭档
+    const wRight = h.sandbox.initActionWidgetState({
+        contextKey: 'privilege',
+        actorId: 0,
+        promptKey: 'privilege.action.15',
+        actionText: '用脚在桌子底下蹭右边玩家的大腿，30秒。'
+    });
+    assert.equal(wRight.partnerIds.length, 0, '明确指定邻座（partners:0）的词条不应随机钦点跨桌玩家');
+
+    // 2) 「舔一下手指」不应生成 0/1 计次器
+    const wLick = h.sandbox.initActionWidgetState({
+        contextKey: 'privilege',
+        actorId: 0,
+        promptKey: 'privilege.action.18',
+        actionText: '舔一下自己的手指，再伸给指定玩家。'
+    });
+    assert.notEqual(wLick.mode, 'counter', '「一下」单次动作不应生成点击记1次按钮');
+
+    // 3) 「三位参与者轮流抚摸头部30秒」应进入 3 人接力模式且每人均摊 10 秒
+    const wRelay = h.sandbox.initActionWidgetState({
+        contextKey: 'privilege',
+        actorId: 0,
+        promptKey: 'privilege.action.12',
+        actionText: '保持跪姿，被三位参与者轮流抚摸头部30秒。'
+    });
+    assert.equal(wRelay.mode, 'relay');
+    assert.equal(wRelay.perPersonSec, 10);
+
+    // 4) 处决台先换搭档+开表跑 8 秒，再点盲狙 -> 保留剩余秒数与已换搭档锁
+    h.sandbox.__exec(`
+        startDayPhase();
+        startVotePhase();
+        gameState.players[2].alive = false;
+        gameState.actualVoterIds = [0, 1, 2, 3, 4];
+        gameState.voteHistory = { 0: 1, 1: 2, 3: 2, 4: 2 };
+        gameState.pendingExilePunishment = '被另外2位玩家隔衣抚摸30秒。';
+        gameState.pendingExilePunishmentKey = 'exile.punishment.3';
+        gameState.pendingExilePunishmentPlayerId = 2;
+        showExilePunishment(2);
+    `);
+    h.sandbox.rerollActiveActionPartners();
+    h.sandbox.toggleActionWidgetTimer('exile-punishment-countdown');
+    h.advanceTime(8000);
+    assert.equal(h.sandbox.__get('gameState.activeActionWidget.remainingSec'), 22);
+    assert.equal(h.sandbox.__get('gameState.activeActionWidget.partnerRerollUsed'), true);
+
+    h.sandbox.resolveExileBetrayerSnipe(2, 3);
+    assert.equal(h.sandbox.__get('gameState.activeActionWidget.remainingSec'), 22, '后点盲狙不得重置已跑过的秒表');
+    assert.equal(h.sandbox.__get('gameState.activeActionWidget.partnerRerollUsed'), true, '后点盲狙不得重置限1次换搭档锁');
+    assert.equal(h.sandbox.__get('gameState.activeActionWidget.partnerIds[0]'), 3, '盲狙命中的真凶应置为1号搭档');
+});
+
+test('I11. 胜负已定（投出最后一狼且无猎人开枪）直接进入胜负结算页，且结算页清空未完成存档不误报', () => {
+    const h = createHarness();
+    h.sandbox.selectPlayerCount(5);
+    h.sandbox.setupGame({ useMergedOpening: true });
+    h.sandbox.startGamePhase();
+    h.sandbox.skipGameOpening();
+
+    // 场上仅剩最后 1 名狼人与 2 名好人，白天全票投出最后一头狼
+    const lastWolf = h.sandbox.__get('gameState.players.find(p => p.alignment === "wolf")');
+    h.sandbox.__exec(`
+        gameState.players.forEach(p => {
+            if (p.alignment === 'wolf' && p.id !== ${lastWolf.id}) p.alive = false;
+        });
+        startDayPhase();
+        startVotePhase();
+    `);
+    const alive = h.sandbox.__get('getAlivePlayers()');
+    for (const voter of alive) {
+        h.sandbox.openVoterBallot();
+        h.sandbox.selectVoteTarget(voter.id, lastWolf.id);
+        h.sandbox.confirmVote(voter.id);
+    }
+
+    assert.equal(h.sandbox.__get('gameState.phase'), 'end', '投出最后一头狼后应直接宣布好人获胜，不再走多余处决遗言与传机');
+    assert.equal(h.sandbox.__get('gameState.winner'), 'good');
+    assert.equal(h.storage.has('werewolf-game-snapshot'), false, '进入终局结算后应清除局中快照，避免下次重开误报未完成对局');
+});
+
+test('I12. 旧档重开默认启用一圈合并开局，且 Service Worker 安装后并发缓存并调用 skipWaiting', () => {
+    const h = createHarness();
+    h.sandbox.selectPlayerCount(6);
+    h.sandbox.setupGame({ useMergedOpening: false });
+    h.sandbox.__exec('delete gameState.mergedOpeningActive; restartGameSamePlayers();');
+    assert.equal(h.sandbox.__get('gameState.mergedOpeningActive'), true, '无 mergedOpeningActive 字段的旧档点再来一局应默认升级为一圈合并开局');
+
+    const swText = fs.readFileSync(SW_PATH, 'utf8');
+    assert.ok(swText.includes('self.skipWaiting()'), '新版 sw.js 应在校验缓存完整后调用 skipWaiting 确保刷新立即接管');
+    assert.ok(swText.includes('const concurrency = 6;'), 'sw.js 预缓存应启用并发拉取缩短等待时间');
+});
+

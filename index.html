@@ -959,6 +959,7 @@ button:focus-visible, [onclick]:focus-visible, input:focus-visible { outline: 2p
     <!-- 结果界面 -->
     <div id="screen-result" class="screen">
         <div class="header">
+            <div class="header-back" onclick="resetGame()" title="返回首页">←</div>
             <div class="header-title">游戏结束</div>
             <div style="width:40px"></div>
         </div>
@@ -1013,24 +1014,24 @@ const PHASE = { SETUP: 'setup', PRIVILEGE: 'privilege', ROLE: 'role', NIGHT: 'ni
 // 特权卡定义
 const PRIVILEGE_CARDS = {
     // 特权卡池一
-    SILENCE_SEAL: { id: 'SILENCE_SEAL', name: '沉默之印', emoji: '🤐', type: 'wolf_balance', desc: '第1个白天目标不能投票' },
-    HALF_VOTE: { id: 'HALF_VOTE', name: '半票权', emoji: '⚖️', type: 'wolf_balance', desc: '第1个白天目标投票权变为0.5' },
-    NO_SKILL: { id: 'NO_SKILL', name: '技能封印', emoji: '🔒', type: 'wolf_balance', desc: '第1夜目标无法使用夜间技能（含夜间猎枪）' },
-    DISRUPTOR: { id: 'DISRUPTOR', name: '搅局者', emoji: '🌀', type: 'wolf_balance', desc: '首次投票当天目标额外+2票（不公开）' },
-    FRAME_UP: { id: 'FRAME_UP', name: '嫁祸', emoji: '🎭', type: 'wolf_balance', desc: '第1夜查验目标时伪装为本局好人身份（有村民局显示为村民）' },
-    MIST: { id: 'MIST', name: '迷雾', emoji: '🌫️', type: 'wolf_balance', desc: '第1夜所有人查验结果显示为本局随机角色' },
+    SILENCE_SEAL: { id: 'SILENCE_SEAL', name: '沉默之印', emoji: '🤐', type: 'wolf_balance', desc: '生效当天目标不能投票（真激活为第1天，空城计为第2天）' },
+    HALF_VOTE: { id: 'HALF_VOTE', name: '半票权', emoji: '⚖️', type: 'wolf_balance', desc: '生效当天目标投票权变为0.5（真激活为第1天，空城计为第2天）' },
+    NO_SKILL: { id: 'NO_SKILL', name: '技能封印', emoji: '🔒', type: 'wolf_balance', desc: '生效当夜目标无法使用夜间技能，含夜间猎枪' },
+    DISRUPTOR: { id: 'DISRUPTOR', name: '搅局者', emoji: '🌀', type: 'wolf_balance', desc: '生效当天你本人投票选中的目标额外+2票（无需提前选人，不公开）' },
+    FRAME_UP: { id: 'FRAME_UP', name: '嫁祸', emoji: '🎭', type: 'wolf_balance', desc: '生效当夜查验目标时伪装为本局好人身份（有村民局显示为村民）' },
+    MIST: { id: 'MIST', name: '迷雾', emoji: '🌫️', type: 'wolf_balance', desc: '生效当夜全场查验结果显示为本局随机角色（无需选人）' },
     // 特权卡池二
-    DOUBLE_VOTE: { id: 'DOUBLE_VOTE', name: '双票权', emoji: '🗳️', type: 'good_balance', desc: '第1个白天目标投票权+1（狼人变2票，好人+1票）' },
-    IMMUNITY: { id: 'IMMUNITY', name: '免疫卡', emoji: '🛡️', type: 'good_balance', desc: '只挡第1夜的刀、毒和夜间猎枪，不挡白天放逐和白天枪击' },
-    RESCUE: { id: 'RESCUE', name: '紧急救援', emoji: '💊', type: 'good_balance', desc: '女巫持有时，自己额外获得1瓶解药' },
-    POISON: { id: 'POISON', name: '额外毒药', emoji: '🧪', type: 'good_balance', desc: '女巫持有时，自己额外获得1瓶毒药' },
-    CRITICAL_HIT: { id: 'CRITICAL_HIT', name: '致命一击', emoji: '💥', type: 'good_balance', desc: '第1个白天目标投票权乘3' },
-    DECOY: { id: 'DECOY', name: '替身傀儡', emoji: '🎎', type: 'good_balance', desc: '仅夜间刀杀时转移到随机其他存活玩家；转移后仍受免疫、守护和解药保护，同时中毒不转移' },
-    MIND_READ: { id: 'MIND_READ', name: '心声聆听', emoji: '👂', type: 'good_balance', desc: '第1夜目标若被查验，天亮后本人可私下得知是谁查验了自己' },
+    DOUBLE_VOTE: { id: 'DOUBLE_VOTE', name: '双票权', emoji: '🗳️', type: 'good_balance', desc: '生效当天目标投票权+1（狼人变2票，好人+1票）' },
+    IMMUNITY: { id: 'IMMUNITY', name: '免疫卡', emoji: '🛡️', type: 'good_balance', desc: '只挡生效当夜的刀、毒和夜间猎枪，不挡白天放逐和白天枪击' },
+    RESCUE: { id: 'RESCUE', name: '紧急救援', emoji: '💊', type: 'good_balance', desc: '女巫持有时，生效当夜自己额外获得1瓶解药（无需选人）' },
+    POISON: { id: 'POISON', name: '额外毒药', emoji: '🧪', type: 'good_balance', desc: '女巫持有时，生效当夜自己额外获得1瓶毒药（无需选人）' },
+    CRITICAL_HIT: { id: 'CRITICAL_HIT', name: '致命一击', emoji: '💥', type: 'good_balance', desc: '生效当天目标投票权乘3（真激活为第1天，空城计为第2天）' },
+    DECOY: { id: 'DECOY', name: '替身傀儡', emoji: '🎎', type: 'good_balance', desc: '自生效轮起，夜间刀杀目标时转移到随机其他存活玩家；同时中毒不转移' },
+    MIND_READ: { id: 'MIND_READ', name: '心声聆听', emoji: '👂', type: 'good_balance', desc: '生效当夜目标若被查验，天亮后本人可私下得知是谁查验了自己' },
     // 特权卡池三
-    REVEAL: { id: 'REVEAL', name: '真相揭露', emoji: '🔍', type: 'good_break', desc: '第1个白天公开目标真实身份和阵营' },
-    NINE_LIVES: { id: 'NINE_LIVES', name: '九命猫', emoji: '🐱', type: 'good_break', desc: '目标遭刀杀、毒杀、放逐或猎人枪击时50%概率免死，每名目标整局限尝试1次，无论成功失败都消耗' },
-    JUDGMENT: { id: 'JUDGMENT', name: '审判日', emoji: '⚡', type: 'good_break', desc: '第1个白天目标投票权+2（狼人变3票，好人+2票）' }
+    REVEAL: { id: 'REVEAL', name: '真相揭露', emoji: '🔍', type: 'good_break', desc: '生效当天公开目标真实身份和阵营（真激活为第1天，空城计为第2天）' },
+    NINE_LIVES: { id: 'NINE_LIVES', name: '九命猫', emoji: '🐱', type: 'good_break', desc: '自生效轮起，目标遭刀杀、毒杀、放逐或枪击时50%概率免死，每名目标限1次' },
+    JUDGMENT: { id: 'JUDGMENT', name: '审判日', emoji: '⚡', type: 'good_break', desc: '生效当天目标投票权+2（狼人变3票，好人+2票）' }
 };
 
 // 动态配置
@@ -1346,7 +1347,7 @@ const DEFAULT_GAME_TEXT = {
     'privilege.action.21': '蒙眼，最多3名玩家轮流摸大腿内侧，每人10秒。可以不蒙。',
     'privilege.action.22': '在座位上扭腰，30秒。',
     'privilege.action.23': '弯腰，让指定玩家看到臀部，10秒。',
-    'privilege.action.24': '用服务的语气对一名玩家说：「先生，请问需要特殊服务吗？」',
+    'privilege.action.24': '用服务的语气对指定玩家说：「贵宾，请问今晚需要特殊服务吗？」',
     'privilege.action.25': '端起酒杯喂指定玩家喝一口，盯着对方眼睛说「今晚听我的」。',
     'privilege.action.26': '凑到指定玩家耳边极轻地吹一口气，用气音说一句暧昧悄悄话。',
     'privilege.action.27': '站到指定玩家身后，双手搭在对方肩膀慢慢往下滑到腰侧，15秒。',
@@ -2526,8 +2527,8 @@ function openSetupFromResult() {
     showScreen('screen-setup');
 }
 
-function confirmReturnToSetup() {
-    if (!confirm('返回设置将重新洗牌，已填写的玩家名字和性别会保留。确定返回吗？')) return;
+function doReturnToSetup() {
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
     const setup = captureCurrentPlayerSetup();
     clearGameTimers();
     clearGameSnapshot();
@@ -2536,6 +2537,22 @@ function confirmReturnToSetup() {
     applyPlayerSetupToInputs(setup);
     updateConfigPreview();
     showScreen('screen-setup');
+}
+
+function confirmReturnToSetup() {
+    const msg = '返回设置将重新洗牌，已填写的玩家名字和性别会保留。确定返回吗？';
+    if (typeof openAppConfirmDialog === 'function') {
+        openAppConfirmDialog({
+            title: '返回游戏设置？',
+            message: msg,
+            confirmText: '返回设置重新洗牌',
+            cancelText: '继续当前开局',
+            onConfirm: doReturnToSetup
+        });
+        return;
+    }
+    if (!confirm(msg)) return;
+    doReturnToSetup();
 }
 
 // ---- 对局存档：保存可停留的子步骤，恢复只渲染，不重放行动/随机结算 ----
@@ -2565,9 +2582,9 @@ function gameResumeRenderers() {
         nightPrelude: action => showNightPrelude(action),
         nightRole: action => runNightPreludeAction(action),
         nightWait: options => showNightRoleWait(options),
-        checkResult: (...args) => showCheckResult(...args),
+        checkResult: (checkerType) => showCheckResultProtectedResume(checkerType),
         mindReadHandoff: () => showMindReadHandoff(),
-        mindReadResult: () => showMindReadResult(),
+        mindReadResult: () => showMindReadHandoff(),
         nightTransition: () => showNightToDayTransition(),
         hunterNightHandoff: id => {
             if (gameState.phase === PHASE.NIGHT) {
@@ -2579,21 +2596,24 @@ function gameResumeRenderers() {
         },
         dayOverview: () => renderDayOverview(),
         dawnEliminationHandoff: id => showDawnEliminationHandoff(id),
-        dawnEliminationPrivate: id => showDawnEliminationPrivate(id),
-        dawnHunterShoot: id => showDawnHunterShoot(id),
+        dawnEliminationPrivate: id => showDawnEliminationHandoff(id),
+        dawnHunterShoot: id => showDawnEliminationHandoff(id),
         dawnHunterResult: (targetId, survived, blockedByImmunity) => renderDawnHunterResult(targetId, survived, blockedByImmunity),
         dayLastWords: () => showNextDayLastWords(),
         daySpeech: () => showNextDaySpeech(),
         daySpeechComplete: () => showDaySpeechComplete(),
         vote: () => showNextVoter(),
-        voteBallot: () => openVoterBallot(),
+        voteBallot: () => {
+            gameState.selectedTarget = null;
+            return showNextVoter();
+        },
         voteSilenced: () => showNextVoter(),
         revoteIntro: () => renderRevoteIntro(),
         voteResult: (id, cause) => renderVoteResult(id, cause),
         exilePunishment: id => showExilePunishment(id),
         eliminationHandoff: id => showEliminationHandoff(id),
-        eliminationPrivate: id => showEliminationPrivate(id),
-        hunterDay: id => hunterShoot(id),
+        eliminationPrivate: id => showEliminationHandoff(id),
+        hunterDay: id => showEliminationHandoff(id),
         hunterNight: id => {
             if (gameState.phase === PHASE.NIGHT) {
                 gameState.dawnConfirmDone = false;
@@ -2617,7 +2637,7 @@ function restoredTimerSeconds(field, fallback) {
         ? Math.max(0, remaining) : fallback;
 }
 
-const SNAPSHOT_VALID_PHASES = [PHASE.PRIVILEGE, PHASE.ROLE, PHASE.NIGHT, PHASE.DAY, PHASE.VOTE, PHASE.END];
+const SNAPSHOT_VALID_PHASES = [PHASE.PRIVILEGE, PHASE.ROLE, PHASE.NIGHT, PHASE.DAY, PHASE.VOTE];
 
 function saveGameSnapshot() {
     try {
@@ -2733,6 +2753,9 @@ function restoreSavedGame() {
         } finally {
             restoringGameSnapshot = false;
         }
+        if (gameState.phase === PHASE.NIGHT && (!gameState.resumeView || gameState.resumeView.key !== 'gameOpening')) {
+            if (typeof startNightAmbience === 'function') startNightAmbience();
+        }
         saveGameSnapshot();
         return;
     }
@@ -2832,7 +2855,11 @@ function applyPlayerSetupToInputs(setup) {
 }
 
 function restartGameSamePlayers() {
-    const keepMerged = Boolean(gameState && gameState.mergedOpeningActive);
+    if (typeof unlockIpadAudioAndSpeech === 'function') unlockIpadAudioAndSpeech();
+    if (typeof resetTabletopFlip === 'function') resetTabletopFlip();
+    const keepMerged = (gameState && typeof gameState.mergedOpeningActive === 'boolean')
+        ? gameState.mergedOpeningActive
+        : true;
     const setup = captureCurrentPlayerSetup();
     clearGameTimers();
     clearGameSnapshot();
@@ -2927,7 +2954,7 @@ function renderNameInputs() {
         row.innerHTML = `
             <button type="button" class="gender-toggle" data-index="${i}" data-gender="${slot.gender}" onclick="toggleGender(this)">${avatar}</button>
             <div class="name-input-wrap">
-                <input type="text" class="name-input" placeholder="座位${i + 1}昵称" data-index="${i}" value="${escapeHtml(slot.name)}" onfocus="if(this.select)this.select()" oninput="if(typeof persistSetupRosterFromDOM==='function')persistSetupRosterFromDOM()">
+                <input type="text" class="name-input" placeholder="座位${i + 1}昵称" data-index="${i}" value="${escapeHtml(slot.name)}" onfocus="if(typeof handleNameInputFocus==='function')handleNameInputFocus(this);else if(this.select)this.select()" onmouseup="if(typeof handleNameInputMouseUp==='function')handleNameInputMouseUp(event,this)" oninput="if(this.dataset)this.dataset.justFocused='0';if(typeof persistSetupRosterFromDOM==='function')persistSetupRosterFromDOM()">
                 <button type="button" class="name-clear-btn" tabindex="-1" onclick="clearSingleNameInput(${i})" aria-label="清空">×</button>
             </div>
         `;
@@ -3303,11 +3330,11 @@ function confirmPrivilegeActivation(activate) {
 
     const needsTarget = cardNeedsTarget(holder.card);
     if (activate && needsTarget && gameState.selectedTarget === null) {
-        alert('请先选择激活目标');
+        notifyPlayerPrompt('请先选择激活目标');
         return;
     }
     if (activate && needsTarget && !getCardActivationTargets(holder).some(player => player.id === gameState.selectedTarget)) {
-        alert('请选择符合这张特权卡规则的目标');
+        notifyPlayerPrompt('请选择符合这张特权卡规则的目标');
         return;
     }
 
@@ -3364,18 +3391,28 @@ function showPrivilegePublicConfirm(holder) {
 
     showScreen('screen-privilege');
     document.getElementById('privilege-content').innerHTML = `
-        <div style="font-size:52px;margin-bottom:16px;">✦</div>
-        <div style="font-size:24px;font-weight:900;margin-bottom:12px;">${text('privilege.confirm.title')}</div>
-        <div class="privilege-public-card">
-            <div class="title">${text('privilege.confirm.secretTitle')}</div>
-            <div class="text">${text('privilege.confirm.line1', { name: holder.name })}</div>
-            <div class="text">${text('privilege.confirm.line2')}</div>
+        <div class="privilege-confirm-layout ${action ? 'locked' : 'drawing'}">
+            <div class="privilege-confirm-left">
+                <div class="privilege-confirm-head" style="text-align:center;">
+                    <div class="star-mark" style="font-size:48px;margin-bottom:10px;">✦</div>
+                    <div style="font-size:22px;font-weight:900;margin-bottom:10px;">${text('privilege.confirm.title')}</div>
+                </div>
+                <div class="privilege-public-card">
+                    <div class="title">${text('privilege.confirm.secretTitle')}</div>
+                    <div class="text">${text('privilege.confirm.line1', { name: holder.name })}</div>
+                    <div class="text">${text('privilege.confirm.line2')}</div>
+                </div>
+            </div>
+            <div class="privilege-confirm-right">
+                ${actionHtml}
+            </div>
         </div>
-        ${actionHtml}
     `;
     document.querySelector('#screen-privilege .bottom-bar').innerHTML = action ? `
-        <button class="btn btn-primary btn-block btn-lg" onclick="confirmPrivilegePublicAction(${holder.id})">${text('privilege.confirm.confirm')}</button>
-        <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="cancelPrivilegePublicAction(${holder.id})">反悔不做（特权作废 + 自罚1杯酒）</button>
+        <div class="privilege-confirm-bottom-row">
+            <button class="btn btn-primary btn-block btn-lg" onclick="confirmPrivilegePublicAction(${holder.id})">${text('privilege.confirm.confirm')}</button>
+            <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="cancelPrivilegePublicAction(${holder.id})">反悔不做（特权作废 + 自罚1杯酒）</button>
+        </div>
     ` : `
         <button class="btn btn-primary btn-block btn-lg" onclick="drawPrivilegePublicAction(${holder.id})">${text('privilege.confirm.drawButton')}</button>
     `;
@@ -4528,6 +4565,24 @@ function finishMindReadResult() {
     processNightDeaths();
 }
 
+function showCheckResultProtectedResume(checkerType = '神职') {
+    const safeType = checkerType || '神职';
+    document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · ${safeType}查验`;
+    document.getElementById('game-content').innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:16px;">
+            <div style="font-size:52px;margin:12px 0;">🔒</div>
+            <div style="font-size:22px;font-weight:800;color:var(--accent-gold);">查验结果已自动隐藏保护</div>
+            <div style="font-size:14px;color:var(--text-dim);margin-top:10px;line-height:1.6;">防止恢复存档瞬间在共享屏幕泄露刚查验的身份 · 倒计时结束自动进入下一环节</div>
+            <div style="width:min(420px,100%);margin-top:14px;">${nightRoleTimerHtml(3, '请全场保持闭眼，即将自动推进。')}</div>
+        </div>
+    `;
+    document.getElementById('game-bottom-bar').innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="finishNightRoleTimer()">✓ 继续下一环节</button>
+    `;
+    setGameResumeView('checkResult', safeType);
+    startNightRoleTimer('checkResult', 3, { autoAdvance: true });
+}
+
 function showCheckResult(checkerType, checkerName, targetName, resultName, resultEmoji) {
     document.getElementById('game-phase-text').textContent = `第${gameState.dayNumber}夜 · ${checkerType}查验`;
     const flipBar = typeof renderNightFlipToolbarHtml === 'function' ? renderNightFlipToolbarHtml() : '';
@@ -4621,6 +4676,10 @@ function showNextWitch() {
     if (switchingWitch && !restoringGameSnapshot) {
         gameState.selectedTarget = null;
         gameState.witchActiveTab = null;
+        if (gameState.targetWheelRotations) {
+            delete gameState.targetWheelRotations.witchPoison;
+            delete gameState.targetWheelRotations.witchSave;
+        }
     }
 
     if (shouldShowNightPrelude('witch')) return;
@@ -4720,8 +4779,8 @@ function showNightWitch(witch, { preserveTimer = true } = {}) {
     const cfg = getConfig(gameState.playerCount);
     const deathIds = Array.from(getVisibleDeathIdsForWitch());
     const deathInfo = deathIds.length > 0
-        ? `<div style="font-size:18px;font-weight:700;color:var(--accent-red);margin-bottom:12px;">💀 当前被杀目标：${deathIds.map(id => getPlayerById(id).name).join('、')}</div>`
-        : `<div style="font-size:18px;font-weight:700;color:var(--accent-green);margin-bottom:12px;">🌟 当前没有被杀目标</div>`;
+        ? `<div style="font-size:15px;font-weight:800;color:var(--accent-red);margin-bottom:4px;">💀 当前被杀目标：${deathIds.map(id => getPlayerById(id).name).join('、')}</div>`
+        : `<div style="font-size:15px;font-weight:800;color:var(--accent-green);margin-bottom:4px;">🌟 当前没有被杀目标</div>`;
 
     const selectedSave = gameState.witchSaveTargets[witch.id];
     const selectedPoison = gameState.witchPoisonTargets[witch.id];
@@ -4773,8 +4832,8 @@ function showNightWitch(witch, { preserveTimer = true } = {}) {
         ${targetActionLayoutHtml({
             phaseText: phaseTitle,
             infoHtml: `
-                ${deathInfo}
                 <div class="info-box">
+                    ${deathInfo}
                     <div>${promptText}</div>
                     <div>自救：${!cfg.witchCanSelfSave ? text('night.witch.selfUnavailable') : (witch.selfSaveUsed ? '已用' : '可用')} | 解药：${witch.maxCure - witch.cureUsed} | 毒药：${witch.maxPoison - witch.poisonUsed}</div>
                     ${!cfg.witchCanSelfSave ? '<div style="color:var(--accent-red)">⚠️ 5人局不能自救</div>' : '<div style="color:var(--accent-green)">💊 自救不消耗解药</div>'}
@@ -5359,9 +5418,24 @@ function revealDayPrivateMessage(playerId) {
     `);
 }
 
+function isFactionEliminatedNow() {
+    const alive = getAlivePlayers();
+    const goodAlive = alive.filter(p => p.alignment === ALIGNMENT.GOOD).length;
+    const totalWolves = gameState.players.filter(p => p.alignment === ALIGNMENT.WOLF).length;
+    const deadWolves = gameState.players.filter(p => p.alignment === ALIGNMENT.WOLF && !p.alive).length;
+    return deadWolves === totalWolves || goodAlive === 0;
+}
+
 function beginDawnDeathConfirmations() {
     const deaths = Array.from(gameState.deathsTonight || []);
     if (deaths.length === 0 || gameState.dawnConfirmDone) {
+        startDaySpeechFlow();
+        return;
+    }
+    const anyLiveHunterInDeaths = deaths.some(id => nightHunterCanShoot(getPlayerById(id)));
+    if (isFactionEliminatedNow() && !anyLiveHunterInDeaths) {
+        gameState.dawnConfirmDone = true;
+        gameState.players.forEach(p => { p.immuneTonight = false; });
         startDaySpeechFlow();
         return;
     }
@@ -5371,6 +5445,14 @@ function beginDawnDeathConfirmations() {
 }
 
 function advanceDawnDeathConfirmations() {
+    const remainingIds = (gameState.dawnConfirmQueue || []).slice(gameState.dawnConfirmIndex);
+    const anyPendingHunter = remainingIds.some(id => nightHunterCanShoot(getPlayerById(id)));
+    if (isFactionEliminatedNow() && !anyPendingHunter) {
+        gameState.dawnConfirmDone = true;
+        gameState.players.forEach(p => { p.immuneTonight = false; });
+        startDaySpeechFlow();
+        return;
+    }
     while (gameState.dawnConfirmIndex < (gameState.dawnConfirmQueue || []).length) {
         const id = gameState.dawnConfirmQueue[gameState.dawnConfirmIndex];
         const player = getPlayerById(id);
@@ -5775,7 +5857,7 @@ function selectVoteTarget(voterId, targetId) {
 
 function confirmVote(voterId) {
     if (gameState.selectedTarget === null) {
-        alert('请先选择投票目标');
+        notifyPlayerPrompt('请先选择投票目标');
         return;
     }
 
@@ -5841,6 +5923,16 @@ function tallyVotes() {
     if (!tryNineLives(votedOut)) {
         votedOut.alive = false;
         log(`📢 ${votedOut.name} 被投票出局`, 'info');
+        const mayShoot = votedOut.roleKey === 'hunter' && votedOut.canShoot;
+        if (isFactionEliminatedNow() && !mayShoot) {
+            gameState.pendingExilePunishment = '';
+            gameState.pendingExilePunishmentKey = '';
+            gameState.pendingExilePunishmentPlayerId = null;
+            gameState.exileBetrayerState = null;
+            gameState.activeActionWidget = null;
+            checkVictory();
+            return;
+        }
         const picked = selectSmartPrompt('exile.punishment', 'exile', 'werewolf-used-exile-punishments', votedOut);
         gameState.pendingExilePunishment = picked.text;
         gameState.pendingExilePunishmentKey = picked.key;
@@ -6079,6 +6171,11 @@ function confirmHunterShoot(hunterId) {
     target.alive = false;
 
     log(`💀 ${target.name} 被猎人带走`, 'info');
+    const targetMayChainShoot = target.roleKey === 'hunter' && target.canShoot;
+    if (isFactionEliminatedNow() && !targetMayChainShoot) {
+        checkVictory();
+        return;
+    }
     // 被枪杀者同样先公告和发表遗言，然后私下决定是否发动连锁技能。
     renderVoteResult(target.id, 'hunter');
 }
@@ -6357,7 +6454,10 @@ function renderResultActions() {
             <button class="btn btn-secondary" style="flex:1;" onclick="showGameLog()">📋 本局暗战复盘</button>
             <button class="btn btn-secondary" style="flex:1;" onclick="showPartyLeaderboardModal()">🏆 今晚总榜</button>
         </div>
-        <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="openSetupFromResult()">⚙️ 调整车速/人数（保留已填名单）</button>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-ghost" style="flex:1.25;" onclick="openSetupFromResult()">⚙️ 调整车速/房规</button>
+            <button class="btn btn-ghost" style="flex:0.95;" onclick="resetGame()">🏠 返回首页/改人数</button>
+        </div>
     `;
 }
 
@@ -6431,7 +6531,8 @@ function showResult() {
     if (!gameState.victoryPrivilege) {
         releaseWakeLock();
     }
-    setGameResumeView('resultScreen');
+    gameState.resumeView = { key: 'resultScreen', args: [] };
+    clearGameSnapshot();
 }
 
 // =====================================================
@@ -6567,7 +6668,19 @@ function switchRuleTab(btn, tab) {
 }
 
 function confirmQuit() {
-    if (confirm('确定要退出当前游戏吗？')) {
+    const msg = '确定要退出当前对局并返回首页吗？已保存的对局进度将被清空。';
+    if (typeof openAppConfirmDialog === 'function') {
+        openAppConfirmDialog({
+            title: '退出当前对局？',
+            message: msg,
+            confirmText: '确认退出本局',
+            cancelText: '继续游戏',
+            danger: true,
+            onConfirm: () => resetGame()
+        });
+        return;
+    }
+    if (confirm(msg)) {
         resetGame();
     }
 }
@@ -6578,6 +6691,33 @@ function confirmQuit() {
 
 async function initApp() {
     await loadGameText();
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            const savedCount = Number(sessionStorage.getItem('werewolf-pwa-resume-count') || 0);
+            const savedScreen = sessionStorage.getItem('werewolf-pwa-resume-screen');
+            sessionStorage.removeItem('werewolf-pwa-resume-count');
+            sessionStorage.removeItem('werewolf-pwa-resume-screen');
+            if (savedCount >= 5 && savedCount <= 10) {
+                playerCount = savedCount;
+                gameState.playerCount = savedCount;
+                [5, 6, 7, 8, 9, 10].forEach(n => {
+                    const btn = document.getElementById(`btn-${n}p`);
+                    if (btn) btn.className = playerCount === n ? 'btn btn-secondary btn-sm' : 'btn btn-ghost btn-sm';
+                });
+                const descEl = document.getElementById('selected-mode-desc');
+                if (descEl) descEl.textContent = getConfig(playerCount).desc;
+            }
+            if (savedScreen === 'screen-setup') {
+                renderNameInputs();
+                updateGodVoiceToggle();
+                updateHouseRuleToggles();
+                updateSetupSpicyControls();
+                updateConfigPreview();
+                showScreen('screen-setup');
+                return;
+            }
+        }
+    } catch (e) { /* 忽略隐私模式限制 */ }
     renderNameInputs();
     updateGodVoiceToggle();
     updateHouseRuleToggles();
@@ -6607,8 +6747,17 @@ let pwaStatusRequestId = 0;
 function isSafeForPWAUpdate() {
     const activeScreen = document.querySelector('.screen.active');
     if (!activeScreen) return false;
-    if (activeScreen.id === 'screen-home') return true;
-    return activeScreen.id === 'screen-result' && (!gameState || !gameState.victoryPrivilege);
+    if (activeScreen.id === 'screen-home' || activeScreen.id === 'screen-setup') return true;
+    if (activeScreen.id === 'screen-result') {
+        const timerRunning = Boolean(gameState && gameState.activeActionWidget && gameState.activeActionWidget.started);
+        return !timerRunning;
+    }
+    return false;
+}
+
+function isPreGameScreenForAutoUpdate() {
+    const activeScreen = document.querySelector('.screen.active');
+    return Boolean(activeScreen && (activeScreen.id === 'screen-home' || activeScreen.id === 'screen-setup'));
 }
 
 function showPWAStatus(message, showUpdateButton = false) {
@@ -6692,18 +6841,38 @@ function showPWAUpdatePrompt(worker) {
         showPWAStatus(text('pwa.updating'));
         return;
     }
+    // 在首页或尚未发牌开局的设置页（玩家昵称与设置已实时持久化在 localStorage），自动无缝激活新版本
+    if (worker.state === 'installed' && isPreGameScreenForAutoUpdate()) {
+        applyPWAUpdate();
+        return;
+    }
     const canUpdate = isSafeForPWAUpdate();
     showPWAStatus(text(canUpdate ? 'pwa.updateReady' : 'pwa.updateLater'), canUpdate);
+}
+
+function reloadPreservingSetupIfSafe() {
+    if (refreshing) return;
+    try {
+        const activeScreen = document.querySelector('.screen.active');
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('werewolf-pwa-resume-count', String(playerCount));
+            if (activeScreen && activeScreen.id === 'screen-setup') {
+                if (typeof persistSetupRosterFromDOM === 'function') persistSetupRosterFromDOM();
+                sessionStorage.setItem('werewolf-pwa-resume-screen', 'screen-setup');
+            }
+        }
+    } catch (e) { /* 忽略 */ }
+    refreshing = true;
+    window.location.reload();
 }
 
 function applyPWAUpdate() {
     if (!isSafeForPWAUpdate() || pwaUpdateRequested || refreshing) return;
     const worker = pendingServiceWorker;
     if (!worker) return;
-    // 若另一标签页已完成激活，用户仍可明确选择重新载入本页。
+    // 若新版本已完成激活，安全保存当前设置页状态并重新载入本页
     if (worker.state === 'activated') {
-        refreshing = true;
-        window.location.reload();
+        reloadPreservingSetupIfSafe();
         return;
     }
     if (worker.state !== 'installed') return;
@@ -6727,6 +6896,7 @@ function applyPWAUpdate() {
 }
 
 if ('serviceWorker' in navigator) {
+    const hadInitialController = Boolean(navigator.serviceWorker.controller);
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then(registration => {
             updatePWAStatus();
@@ -6735,7 +6905,7 @@ if ('serviceWorker' in navigator) {
                 if (!newWorker || watchedWorkers.has(newWorker)) return;
                 watchedWorkers.add(newWorker);
                 const onStateChange = () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    if ((newWorker.state === 'installed' || newWorker.state === 'activated') && hadInitialController) {
                         showPWAUpdatePrompt(newWorker);
                     } else if (newWorker.state === 'redundant') {
                         // 旧 worker 退役也会触发此事件，不能清除新版本的刷新请求。
@@ -6768,17 +6938,24 @@ if ('serviceWorker' in navigator) {
             window.clearTimeout(pwaUpdateTimer);
             pwaUpdateTimer = null;
         }
-        if (pwaUpdateRequested && !refreshing) {
+        if (!hadInitialController) {
+            updatePWAStatus();
+            return;
+        }
+        if ((pwaUpdateRequested || isPreGameScreenForAutoUpdate()) && !refreshing) {
             if (isSafeForPWAUpdate()) {
-                refreshing = true;
-                window.location.reload();
+                reloadPreservingSetupIfSafe();
                 return;
             }
-            // 点击更新后已进入对局，也不能强制刷新；回首页/结算后再提示重载。
-            pwaUpdateRequested = false;
-            pendingServiceWorker = navigator.serviceWorker.controller;
         }
-        updatePWAStatus();
+        // 若正在对局进行中，不强制打断刷新；回首页/设置/结算后再一键更新。
+        pwaUpdateRequested = false;
+        pendingServiceWorker = navigator.serviceWorker.controller;
+        if (pendingServiceWorker) {
+            showPWAUpdatePrompt(pendingServiceWorker);
+        } else {
+            updatePWAStatus();
+        }
     });
 }
 

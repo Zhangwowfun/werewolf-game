@@ -1,4 +1,4 @@
-const APP_VERSION = '2026.11.12-3';
+const APP_VERSION = '2026.11.13-1';
 const SCOPE_URL = new URL('./', self.registration.scope).href;
 const SCOPE_PATH = new URL(SCOPE_URL).pathname;
 const CACHE_PREFIX = `werewolf-pwa-${encodeURIComponent(SCOPE_PATH)}-`;
@@ -129,10 +129,10 @@ async function isValidCoreResponse(asset, response) {
 async function hasCompleteAppShell() {
   if (!(await caches.has(CACHE_NAME))) return false;
   const cache = await caches.open(CACHE_NAME);
-  for (const asset of APP_SHELL) {
-    if (!(await isValidCoreResponse(asset, await cache.match(assetURL(asset))))) return false;
-  }
-  return true;
+  const checks = await Promise.all(
+    APP_SHELL.map(async asset => isValidCoreResponse(asset, await cache.match(assetURL(asset))))
+  );
+  return checks.every(Boolean);
 }
 
 async function precacheAppShell() {
@@ -143,15 +143,39 @@ async function precacheAppShell() {
     if (await hasCompleteAppShell()) return;
     throw new Error('Existing application cache is incomplete');
   }
+  let firstError = null;
+  let aborted = false;
   try {
     const cache = await caches.open(CACHE_NAME);
-    for (const asset of APP_SHELL) {
-      const response = await fetch(assetURL(asset), { cache: 'reload' });
-      if (!(await isValidCoreResponse(asset, response))) {
-        throw new Error(`Required offline resource is invalid: ${asset}`);
+    const uniqueAssets = [...APP_SHELL];
+    const concurrency = 6;
+    let cursor = 0;
+    async function workerLoop() {
+      while (!aborted && cursor < uniqueAssets.length) {
+        const asset = uniqueAssets[cursor++];
+        if (asset === './') continue;
+        try {
+          const response = await fetch(assetURL(asset), { cache: 'reload' });
+          if (aborted) return;
+          if (!(await isValidCoreResponse(asset, response))) {
+            throw new Error(`Required offline resource is invalid: ${asset}`);
+          }
+          if (aborted) return;
+          await cache.put(assetURL(asset), response.clone());
+          if (asset === './index.html' && !aborted) {
+            await cache.put(assetURL('./'), response.clone());
+          }
+        } catch (err) {
+          if (!aborted) {
+            aborted = true;
+            firstError = err;
+          }
+          return;
+        }
       }
-      await cache.put(assetURL(asset), response.clone());
     }
+    await Promise.allSettled(Array.from({ length: concurrency }, () => workerLoop()));
+    if (firstError) throw firstError;
     if (!(await hasCompleteAppShell())) throw new Error('Offline resources were not saved completely');
   } catch (error) {
     // Only this newly-created, uninstalled version is disposable.
@@ -161,9 +185,11 @@ async function precacheAppShell() {
 }
 
 self.addEventListener('install', event => {
-  // The first installation activates normally. Updates remain waiting until
-  // the page requests SKIP_WAITING after the user chooses to update.
-  event.waitUntil(precacheAppShell());
+  // 完整校验并写入新版独立缓存桶后立即转正，局中不强制刷新旧页，下次刷新即 100% 运行最新版
+  event.waitUntil((async () => {
+    await precacheAppShell();
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {

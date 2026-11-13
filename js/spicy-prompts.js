@@ -38,10 +38,7 @@ const SPICY_META = {
     },
     'privilege.action.22': { tier: 1, actor: 'any', partners: 0 },
     'privilege.action.23': { tier: 2, actor: 'any', partners: 1, pref: 'opposite' },
-    'privilege.action.24': {
-        tier: 1, actor: 'any', partners: 1, pref: 'opposite',
-        maleTargetAlt: '用服务的语气对指定玩家说：「贵宾，请问今晚需要特殊服务吗？」'
-    },
+    'privilege.action.24': { tier: 1, actor: 'any', partners: 1, pref: 'opposite' },
     'privilege.action.25': { tier: 1, actor: 'any', partners: 1, pref: 'opposite' },
     'privilege.action.26': { tier: 1, actor: 'any', partners: 1, pref: 'opposite' },
     'privilege.action.27': { tier: 1, actor: 'any', partners: 1, pref: 'opposite' },
@@ -160,9 +157,6 @@ function resolvePromptText(entry, actorPlayer, noPropsMode) {
     if (noPropsMode && meta.noProps) {
         return meta.noProps;
     }
-    if (meta.maleTargetAlt) {
-        return meta.maleTargetAlt;
-    }
     return entry.rawText;
 }
 
@@ -231,11 +225,11 @@ function selectSmartPrompt(prefix, stage, storageKey, actorPlayer = null, exclud
 
 function inferPartnerCountFromText(actionText, promptKey = '') {
     const meta = promptKey && SPICY_META[promptKey];
-    if (meta && typeof meta.partners === 'number' && meta.partners > 0) return meta.partners;
+    if (meta && typeof meta.partners === 'number' && meta.partners >= 0) return meta.partners;
     const str = String(actionText || '');
     if (/最多3名|三位参与者|三名胜利玩家/.test(str)) return 3;
     if (/选2位|另外2位|2位异性|二位参与者|两名玩家|2位玩家|两名胜利玩家/.test(str)) return 2;
-    if (/指定玩家|一名玩家|左边|右边/.test(str)) return 1;
+    if (/指定玩家|一名玩家/.test(str)) return 1;
     return 0;
 }
 
