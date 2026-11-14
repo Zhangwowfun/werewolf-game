@@ -1,4 +1,4 @@
-const APP_VERSION = '2026.11.13-1';
+const APP_VERSION = '2026.11.13-2';
 const SCOPE_URL = new URL('./', self.registration.scope).href;
 const SCOPE_PATH = new URL(SCOPE_URL).pathname;
 const CACHE_PREFIX = `werewolf-pwa-${encodeURIComponent(SCOPE_PATH)}-`;
@@ -43,6 +43,8 @@ const APP_SHELL = [
   './audio/god/voteResult.mp3',
   './audio/god/voteStart.mp3',
   './audio/god/witchAction.mp3',
+  './audio/god/witchAction_2.mp3',
+  './audio/god/witchAction_1.mp3',
   './audio/god/wolfAction.mp3'
 ];
 

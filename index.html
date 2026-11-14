@@ -1907,10 +1907,12 @@ let godVoicePlaybackToken = 0;
 let godVoiceSafetyTimerId = null;
 let activeSpeechUtterance = null;
 let gameOpeningId = 0;
-const GOD_VOICE_MAX_WAIT_MS = 9000;
-const NIGHT_WAIT_MIN_SECONDS = 9;
-const NIGHT_WAIT_JITTER_SECONDS = 5;
+const GOD_VOICE_MAX_WAIT_MS = 11500;
+const NIGHT_OPEN_PRELUDE_SECONDS = 10;
+const NIGHT_WAIT_MIN_SECONDS = 13;
+const NIGHT_WAIT_JITTER_SECONDS = 2;
 const CHINESE_ORDINALS = ['', '一', '二', '三', '四'];
+const HAS_RECORDED_WITCH_SLOTS = true;
 
 const GOD_VOICE_FILES = {
     voiceOn: 'voiceOn',
@@ -1920,6 +1922,8 @@ const GOD_VOICE_FILES = {
     wolfAction: 'wolfAction',
     gargoyleKill: 'gargoyleKill',
     witchAction: 'witchAction',
+    witchAction_1: 'witchAction_1',
+    witchAction_2: 'witchAction_2',
     guardianAction: 'guardianAction',
     nightToDayTransition: 'nightToDayTransition',
     dayStart: 'dayStart',
@@ -1969,6 +1973,10 @@ function ensureGodVoiceAudio() {
 }
 
 function recordedGodVoiceLine(key, data = {}) {
+    const witchSlot = /^witchAction_([12])$/.exec(key);
+    if (witchSlot) {
+        return `${CHINESE_ORDINALS[Number(witchSlot[1])]}号女巫请睁眼，烛火微明，请决定是否使用药水。`;
+    }
     const template = DEFAULT_GAME_TEXT[`voice.${key}`];
     if (typeof template !== 'string' || !template.trim()) return '';
     return formatText(template.trim(), data);
@@ -2005,6 +2013,11 @@ function speakUtterance(line, finish) {
 function speakWitchTurnVoice(witch, totalWitches) {
     if (totalWitches <= 1) {
         speakGodLine('witchAction');
+        return;
+    }
+    const slotNum = witch?.witchOrder === 2 ? 2 : 1;
+    if (HAS_RECORDED_WITCH_SLOTS) {
+        speakGodLine(`witchAction_${slotNum}`);
         return;
     }
     if (!godVoiceEnabled || restoringGameSnapshot || typeof window === 'undefined') return;
@@ -3786,7 +3799,7 @@ function startNightPhase() {
     checkGargoyleAwaken();
 
     // 夜晚流程：预言家 → 石像鬼 → 狼人 → 觉醒石像鬼 → 女巫 → 守卫 → 结算
-    showNightProphetCheck();
+    showNightPrelude('prophet', NIGHT_OPEN_PRELUDE_SECONDS);
 }
 
 function applyNightCards() {

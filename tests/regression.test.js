@@ -161,14 +161,14 @@ test('6. 10人局双女巫分配独立一号/二号编号并分步语音唤醒�
         startWitchPhase();
     `);
     assert.ok(
-        h.spoken.some(s => s.type === 'tts' && s.text.includes('一号女巫请睁眼')),
-        '第一位女巫行动必须播报「一号女巫请睁眼」而非无编号录音'
+        h.spoken.some(s => (s.type === 'tts' && s.text.includes('一号女巫请睁眼')) || (s.type === 'audio' && s.src.includes('witchAction_1.mp3'))),
+        '第一位女巫行动必须播报独立的 1 号女巫语音而非无编号通用录音'
     );
     h.sandbox.skipWitchAction();
     h.sandbox.finishNightPrelude();
     assert.ok(
-        h.spoken.some(s => s.type === 'tts' && s.text.includes('二号女巫请睁眼')),
-        '第二位女巫行动必须播报「二号女巫请睁眼」'
+        h.spoken.some(s => (s.type === 'tts' && s.text.includes('二号女巫请睁眼')) || (s.type === 'audio' && s.src.includes('witchAction_2.mp3'))),
+        '第二位女巫行动必须播报独立的 2 号女巫语音'
     );
 });
 

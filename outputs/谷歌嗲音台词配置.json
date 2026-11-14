@@ -1,0 +1,125 @@
+{
+  "model": "gemini-3.8-flash-tts",
+  "active_style_preset": "coquettish_whisper",
+  "style_presets": {
+    "sweet_gentle": "Warm, sweet young woman speaking Mandarin softly with gentle breathiness, tender upturned sentence endings, affectionate and soothing vocal smile",
+    "coquettish_whisper": "Soft, breathy, coquettish Mandarin whisper close to the ear, playful teasing charm, sweet slightly raised pitch with slow, lingering spoiled sentence endings and a seductive vocal smile",
+    "sultry_tease": "Intimate, sultry late-night Mandarin close-mic whisper, rich breathy airiness, languid slow pace, irresistibly teasing and flirtatious inflection with soft sighs"
+  },
+  "lines": [
+    {
+      "file": "voiceOn",
+      "desc": "设置页开启语音主持试听",
+      "style": "",
+      "text": "<sigh> 语音主持开启啦～ <breath> 今晚呀……人家就在耳边，陪你们慢慢玩哦～ <chuckle>"
+    },
+    {
+      "file": "gameStart",
+      "desc": "全员落座正式开场（限8秒内）",
+      "style": "",
+      "text": "<breath> 各位都坐好啦～？月色这么美，今晚的游戏……现在开始咯～ <giggle>"
+    },
+    {
+      "file": "nightOpen",
+      "desc": "入夜闭眼变体1",
+      "style": "",
+      "text": "<sigh> 夜深啦～乖乖把眼睛闭上哦……不许偷看呢～"
+    },
+    {
+      "file": "nightOpen_2",
+      "desc": "入夜闭眼变体2",
+      "style": "",
+      "text": "<breath> 月色暗下来咯……快闭上眼睛呀，让夜风陪你待一会儿～"
+    },
+    {
+      "file": "nightOpen_3",
+      "desc": "入夜闭眼变体3",
+      "style": "",
+      "text": "<sigh> 长夜到啦～所有人都闭好眼睛哦，嘘……"
+    },
+    {
+      "file": "nightOpen_4",
+      "desc": "入夜闭眼变体4",
+      "style": "",
+      "text": "<breath> 星星都睡啦，你也快把眼睛闭紧嘛～"
+    },
+    {
+      "file": "nightOpen_5",
+      "desc": "入夜闭眼变体5",
+      "style": "",
+      "text": "<sigh> 四周好安静呀……闭上眼，好戏马上开始咯～ <chuckle>"
+    },
+    {
+      "file": "prophetCheck",
+      "desc": "预言家睁眼查验",
+      "style": "",
+      "text": "<breath> 预言家，悄悄睁开眼睛吧～ <short pause> 今晚……你想看穿谁的小秘密呀～？"
+    },
+    {
+      "file": "gargoyleCheck",
+      "desc": "石像鬼睁眼查验",
+      "style": "",
+      "text": "<breath> 石像鬼，轮到你睁眼咯～在黑夜里，悄悄摸清一个人的底牌吧～"
+    },
+    {
+      "file": "wolfAction",
+      "desc": "普通狼人睁眼刀人",
+      "style": "",
+      "text": "<chuckle> 小狼人们，快睁开眼睛呀～ <short pause> 今晚……你们想联手吃掉谁呢～？"
+    },
+    {
+      "file": "gargoyleKill",
+      "desc": "石像鬼行动阶段（不暴露是否觉醒）",
+      "style": "",
+      "text": "<breath> 现在是石像鬼行动时间哦～夜色正浓，照着规矩悄悄操作吧～"
+    },
+    {
+      "file": "witchAction",
+      "desc": "单女巫睁眼用药",
+      "style": "",
+      "text": "<sigh> 女巫姐姐，请睁眼吧～ <breath> 救人还是下毒……今晚怎么选呀～？"
+    },
+    {
+      "file": "witchAction_1",
+      "desc": "10人局：一号女巫睁眼用药",
+      "style": "",
+      "text": "<sigh> 一号女巫，请悄悄睁眼哦～ <breath> 看看手里的药瓶，今晚想怎么用呀～？"
+    },
+    {
+      "file": "witchAction_2",
+      "desc": "10人局：二号女巫睁眼用药",
+      "style": "",
+      "text": "<sigh> 二号女巫，轮到你睁眼啦～ <breath> 今晚的药水……要不要拿出来使坏呢～？"
+    },
+    {
+      "file": "guardianAction",
+      "desc": "守卫睁眼守护",
+      "style": "",
+      "text": "<breath> 守卫请睁眼～这么黑的夜里，今晚你想护着哪位心上人呀～？"
+    },
+    {
+      "file": "nightToDayTransition",
+      "desc": "天亮前15秒闭眼盲撩过渡",
+      "style": "",
+      "text": "<sigh> 天快亮咯，继续闭紧眼睛再等十五秒哦～ <chuckle> 想偷偷撩邻座的坏蛋，抓紧动手啦～"
+    },
+    {
+      "file": "dayStart",
+      "desc": "天亮睁眼",
+      "style": "",
+      "text": "<breath> 天亮啦，快睁开眼睛吧～看看昨晚……是谁没能熬过去呢～？"
+    },
+    {
+      "file": "voteStart",
+      "desc": "开始投票放逐",
+      "style": "",
+      "text": "<chuckle> 到投票时间咯～顺着座位把平板传下去，选出你最怀疑的那个人吧～"
+    },
+    {
+      "file": "voteResult",
+      "desc": "公布投票结果与处决惩罚",
+      "style": "",
+      "text": "<giggle> 票数出来啦～来看看今天是谁这么倒霉，要上台接受惩罚咯～"
+    }
+  ]
+}

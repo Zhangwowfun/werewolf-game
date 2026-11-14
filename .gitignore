@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.env.*
+*.key
+.gemini_api_key
+outputs/.google_voice_id.txt
+outputs/*.wav
+outputs/谷歌嗲音试听/
+outputs/谷歌嗲音全套成品/
+outputs/旧版语音备份/
